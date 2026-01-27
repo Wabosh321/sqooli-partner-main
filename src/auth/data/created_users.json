@@ -1,0 +1,134 @@
+{
+  "created_users": [
+    {
+      "id": "child-user-001",
+      "parent_user_id": "user-002",
+      "email": "john.doe@partner.com",
+      "full_name": "John Doe",
+      "role": "team_member",
+      "partner_type": "institutional",
+      "access_level": 20,
+      "permissions": [
+        {
+          "category": "dashboard",
+          "level": "view"
+        },
+        {
+          "category": "campaigns",
+          "level": "full"
+        },
+        {
+          "category": "programs",
+          "level": "view"
+        }
+      ],
+      "is_active": true,
+      "created_at": "2025-01-10T10:30:00Z",
+      "created_by": "user-002"
+    },
+    {
+      "id": "child-user-002",
+      "parent_user_id": "user-002",
+      "email": "jane.smith@partner.com",
+      "full_name": "Jane Smith",
+      "role": "campaign_manager",
+      "partner_type": "institutional",
+      "access_level": 35,
+      "permissions": [
+        {
+          "category": "dashboard",
+          "level": "full"
+        },
+        {
+          "category": "campaigns",
+          "level": "full"
+        },
+        {
+          "category": "programs",
+          "level": "view"
+        },
+        {
+          "category": "reports",
+          "level": "view"
+        }
+      ],
+      "is_active": true,
+      "created_at": "2025-01-05T14:15:00Z",
+      "created_by": "user-002"
+    },
+    {
+      "id": "child-user-003",
+      "parent_user_id": "user-002",
+      "email": "mike.wilson@partner.com",
+      "full_name": "Mike Wilson",
+      "role": "analyst",
+      "partner_type": "institutional",
+      "access_level": 25,
+      "permissions": [
+        {
+          "category": "dashboard",
+          "level": "view"
+        },
+        {
+          "category": "campaigns",
+          "level": "view"
+        },
+        {
+          "category": "reports",
+          "level": "full"
+        }
+      ],
+      "is_active": true,
+      "created_at": "2024-12-28T09:45:00Z",
+      "created_by": "user-002"
+    },
+    {
+      "id": "child-user-004",
+      "parent_user_id": "user-003",
+      "email": "sarah.brown@affiliate.com",
+      "full_name": "Sarah Brown",
+      "role": "team_member",
+      "partner_type": "affiliate",
+      "access_level": 15,
+      "permissions": [
+        {
+          "category": "dashboard",
+          "level": "view"
+        },
+        {
+          "category": "campaigns",
+          "level": "full"
+        }
+      ],
+      "is_active": true,
+      "created_at": "2025-01-12T11:00:00Z",
+      "created_by": "user-003"
+    },
+    {
+      "id": "child-user-005",
+      "parent_user_id": "user-003",
+      "email": "alex.taylor@affiliate.com",
+      "full_name": "Alex Taylor",
+      "role": "campaign_coordinator",
+      "partner_type": "affiliate",
+      "access_level": 20,
+      "permissions": [
+        {
+          "category": "dashboard",
+          "level": "view"
+        },
+        {
+          "category": "campaigns",
+          "level": "full"
+        },
+        {
+          "category": "reports",
+          "level": "view"
+        }
+      ],
+      "is_active": true,
+      "created_at": "2025-01-08T13:20:00Z",
+      "created_by": "user-003"
+    }
+  ]
+}

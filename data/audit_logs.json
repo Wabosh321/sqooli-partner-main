@@ -1,0 +1,6 @@
+[
+  {
+    "status": "error",
+    "errorMessage": "[Request ID: e0e7408b67749f8a] Server Error\nCould not find public function for 'audit_logs:list'. Did you forget to run `npx convex dev` or `npx convex deploy`?\n"
+  }
+]

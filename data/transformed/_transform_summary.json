@@ -1,0 +1,64 @@
+{
+  "transformedAt": "2025-12-17T00:34:05.469Z",
+  "tables": [
+    {
+      "table": "users",
+      "rowsTransformed": 1,
+      "success": true,
+      "error": null,
+      "sampleRecord": {
+        "id": "3fb39b13-89f9-4be9-9843-3bc8efa5ea85"
+      }
+    },
+    {
+      "table": "partners",
+      "rowsTransformed": 1,
+      "success": true,
+      "error": null,
+      "sampleRecord": {
+        "id": "7545b203-cb86-408b-bf0d-d388836b2861"
+      }
+    },
+    {
+      "table": "campaigns",
+      "rowsTransformed": 1,
+      "success": true,
+      "error": null,
+      "sampleRecord": {
+        "id": "9c37e44e-59b7-4206-a0d8-6e342f6f0cd3",
+        "status": "error"
+      }
+    },
+    {
+      "table": "transactions",
+      "rowsTransformed": 1,
+      "success": true,
+      "error": null,
+      "sampleRecord": {
+        "id": "fdc265e7-c48d-497b-8075-d49b7e2a1d49",
+        "status": "error"
+      }
+    },
+    {
+      "table": "wallets",
+      "rowsTransformed": 1,
+      "success": true,
+      "error": null,
+      "sampleRecord": {
+        "id": "5c505efe-0b48-4743-8121-38301da2dacb"
+      }
+    },
+    {
+      "table": "audit_logs",
+      "rowsTransformed": 1,
+      "success": true,
+      "error": null,
+      "sampleRecord": {
+        "id": "d51232d8-d530-435c-a4d6-fca80ab6cecf"
+      }
+    }
+  ],
+  "totalTransformed": 6,
+  "totalTables": 6,
+  "successCount": 6
+}

@@ -1,0 +1,6 @@
+TABLE,POLICY_NAME,SQL_FILE:LINE,CODE_CALLSITE,CODE_FILE:LINE,DECISION,DETAILS
+campaigns,prevent_direct_insert,scripts/005_create_campaign_rpc_and_rls.sql:121,INSERT into campaigns,src/components/common/CreateCampaign.tsx:236,BYPASSED_BY_BACKEND,Client INSERT sites replaced to call `/api/create-campaign` which invokes `create_campaign` RPC; RLS still enforces direct inserts but flow now uses RPC.
+campaigns,select_own_campaigns,scripts/005_create_campaign_rpc_and_rls.sql:?,SELECT,src/pages/*,POLICY_DEPENDENT,Policy allows SELECT when partner/user mapping matches auth.uid(); verify mapping in code.
+campaigns,update_own_campaigns,scripts/005_create_campaign_rpc_and_rls.sql:?,UPDATE,src/components/CampaignDetails.tsx:160,ALLOWED (if owner),Policy permits UPDATE when partner ownership matches auth.uid(); ensure partner/user fields align.
+campaigns,delete_own_campaigns,scripts/005_create_campaign_rpc_and_rls.sql:?,DELETE,src/components/CampaignDetails.tsx:160,ALLOWED (if owner),Policy permits DELETE when partner ownership matches auth.uid(); ensure runtime auth mapping is correct.
+channels,prevent_direct_channel_insert,scripts/005_create_campaign_rpc_and_rls.sql:?,INSERT,src/lib/*,BLOCKED_AT_RUNTIME,Policy prevents direct channel INSERT; backend RPC or admin path required.

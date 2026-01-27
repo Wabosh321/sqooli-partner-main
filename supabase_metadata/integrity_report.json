@@ -1,0 +1,77 @@
+[
+  {
+    "id": "IR-001",
+    "title": "Frontend direct INSERT into `campaigns` while RLS blocks direct INSERTs",
+    "severity": "CRITICAL",
+    "files": [
+      { "path": "src/components/common/CreateCampaign.tsx", "line": 236 },
+      { "path": "src/components/CreateCampaign.tsx", "line": 184 },
+      { "path": "scripts/005_create_campaign_rpc_and_rls.sql", "line": 121 }
+    ],
+    "description": "Multiple frontend files call `.from('campaigns').insert(...)` but RLS policy `prevent_direct_insert` on `campaigns` explicitly blocks client INSERTs (WITH CHECK (false)).",
+    "why_it_is_wrong": "The RLS policy will cause client-side INSERTs to fail at runtime, leading to user-facing errors and broken onboarding flow.",
+    "when_it_will_break": "Any client attempt to create a campaign via the frontend (anon/auth client key) will receive a permission error when RLS is enforced.",
+    "downstream_impact": "Onboarding step 'Create Campaign' will fail; users will see failures and campaigns won't be created; analytics and dependent services will miss data.",
+    "fix": {
+      "preferred": {
+        "description": "Replace frontend `.insert('campaigns')` with a secure backend endpoint that calls the `create_campaign` RPC using a service_role key.",
+        "code_snippet": "// backend API endpoint example\nconst campaign = await createCampaignRPC(supabaseServiceRoleClient, { partnerId, userId, name, description, targetSignups, durationStart, durationEnd });"
+      },
+      "alternate": {
+        "description": "If direct client INSERT must be used, change RLS policy to allow authenticated inserts with a specific claim — NOT RECOMMENDED.",
+        "sql_snippet": "-- Example: allow inserts only for partner owners (use cautiously)\nCREATE POLICY allow_authenticated_insert ON campaigns FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM partners p WHERE p.id = campaigns.partner_id AND p.user_id = auth.uid()));"
+      }
+    }
+  },
+  {
+    "id": "IR-002",
+    "title": "RPC missing in repo: `create_media_partner_sub_user`",
+    "severity": "CRITICAL",
+    "files": [{ "path": "src/lib/subUserService.ts", "line": 44 }],
+    "description": "`create_media_partner_sub_user` was referenced by code; a migration has been added to define it.",
+    "status": "RESOLVED",
+    "migration": "supabase/migrations/014_create_missing_rpcs.sql",
+    "notes": "Created idempotent `create_media_partner_sub_user` function (SECURITY DEFINER) in migration 014. Verify deployment to MCP and run migration.",
+    "fix": {
+      "description": "Migration added defining `create_media_partner_sub_user`.",
+      "sql_file": "supabase/migrations/014_create_missing_rpcs.sql"
+    }
+  },
+  {
+    "id": "IR-003",
+    "title": "RPC missing in repo: `admin_add_social_media`",
+    "severity": "CRITICAL",
+    "files": [{ "path": "src/lib/socialMediaService.ts", "line": 104 }],
+    "description": "`admin_add_social_media` was referenced by code; a migration has been added to define it.",
+    "status": "RESOLVED",
+    "migration": "supabase/migrations/014_create_missing_rpcs.sql",
+    "notes": "Created idempotent `admin_add_social_media` function (SECURITY DEFINER) in migration 014. Verify deployment to MCP and run migration.",
+    "fix": {
+      "description": "Migration added defining `admin_add_social_media`.",
+      "sql_file": "supabase/migrations/014_create_missing_rpcs.sql"
+    }
+  },
+  {
+    "id": "IR-004",
+    "title": "Schema disagreement: `partners` onboarding fields differ across repo SQLs and TS types",
+    "severity": "HIGH",
+    "files": [
+      { "path": "final_database_schema.sql", "line": 60 },
+      { "path": "sqooli_partner_full_database_details.sql", "line": 108 },
+      { "path": "src/types/database.types.ts", "line": 1 }
+    ],
+    "description": "`sqooli_partner_full_database_details.sql` defines onboarding flags (wallet_setup_completed, onboarding_completed, times, metadata) while `final_database_schema.sql`'s `partners` lacks them; generated TypeScript types (`src/types/database.types.ts`) do not include these fields.",
+    "why_it_is_wrong": "Inconsistent schema sources produce type drift and runtime mismatches; code expects onboarding fields (see `src/utils/verifyAuthData.ts`), but TS types and some SQL do not align.",
+    "when_it_will_break": "When code reads/writes onboarding flags (e.g., `completePartnerOnboarding`) against a DB that differs from the TS types, runtime errors or missing fields will occur.",
+    "downstream_impact": "Onboarding UI, feature gating, and any logic depending on these flags may behave incorrectly or crash.",
+    "fix": {
+      "description": "Decide canonical schema (prefer migration files under `supabase/migrations`), update SQL migrations to include onboarding fields if intended, re-run `npx supabase gen types typescript` to regenerate `src/types/database.types.ts`, and update code where necessary.",
+      "steps": [
+        "1) Confirm canonical schema (migrations directory).",
+        "2) If `partners` should include onboarding flags, add a migration `ALTER TABLE partners ADD COLUMN wallet_setup_completed boolean DEFAULT false;` etc.",
+        "3) Run `npx supabase gen types typescript --schema public > src/types/database.types.ts` and commit.",
+        "4) Run full test of onboarding flows in staging."
+      ]
+    }
+  }
+]

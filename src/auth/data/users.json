@@ -1,0 +1,177 @@
+{
+  "users": [
+    {
+      "id": "user-001",
+      "email": "admin@sqooli.com",
+      "password": "Password@123",
+      "role": "super_admin",
+      "partner_type": "institutional",
+      "access_level": 100,
+      "permissions": [
+        {
+          "category": "all_access",
+          "level": "full"
+        }
+      ],
+      "is_first_login": false,
+      "partner_id": "partner-001"
+    },
+    {
+      "id": "user-002",
+      "email": "partner@sqooli.com",
+      "password": "Password@123",
+      "role": "admin_partner",
+      "partner_type": "institutional",
+      "access_level": 45,
+      "permissions": [
+        {
+          "category": "dashboard",
+          "level": "full"
+        },
+        {
+          "category": "campaigns",
+          "level": "full"
+        },
+        {
+          "category": "wallet",
+          "level": "full"
+        },
+        {
+          "category": "reports",
+          "level": "full"
+        },
+        {
+          "category": "users",
+          "level": "full"
+        },
+        {
+          "category": "programs",
+          "level": "full"
+        },
+        {
+          "category": "tasks",
+          "level": "full"
+        },
+        {
+          "category": "settings",
+          "level": "full"
+        }
+      ],
+      "is_first_login": false,
+      "partner_id": "partner-001",
+      "parent_user_id": null
+    },
+    {
+      "id": "user-003",
+      "email": "subuser1@sqooli.com",
+      "password": "Password@123",
+      "role": "partner_member",
+      "partner_type": "institutional",
+      "access_level": 30,
+      "permissions": [
+        {
+          "category": "dashboard",
+          "level": "full"
+        },
+        {
+          "category": "campaigns",
+          "level": "full"
+        },
+        {
+          "category": "wallet",
+          "level": "view"
+        },
+        {
+          "category": "reports",
+          "level": "view"
+        }
+      ],
+      "is_first_login": false,
+      "partner_id": "partner-001",
+      "parent_user_id": "user-002"
+    },
+    {
+      "id": "user-004",
+      "email": "subuser2@sqooli.com",
+      "password": "Password@123",
+      "role": "partner_member",
+      "partner_type": "institutional",
+      "access_level": 30,
+      "permissions": [
+        {
+          "category": "dashboard",
+          "level": "full"
+        },
+        {
+          "category": "campaigns",
+          "level": "full"
+        },
+        {
+          "category": "wallet",
+          "level": "view"
+        },
+        {
+          "category": "reports",
+          "level": "view"
+        }
+      ],
+      "is_first_login": false,
+      "partner_id": "partner-001",
+      "parent_user_id": "user-002"
+    },
+    {
+      "id": "user-005",
+      "email": "affiliate@sqooli.com",
+      "password": "Password@123",
+      "role": "partner_member",
+      "partner_type": "affiliate",
+      "access_level": 25,
+      "permissions": [
+        {
+          "category": "dashboard",
+          "level": "full"
+        },
+        {
+          "category": "campaigns",
+          "level": "full"
+        },
+        {
+          "category": "wallet",
+          "level": "full"
+        }
+      ],
+      "is_first_login": false,
+      "partner_id": "partner-002",
+      "parent_user_id": null
+    },
+    {
+      "id": "user-006",
+      "email": "media@sqooli.com",
+      "password": "Password@123",
+      "role": "partner_member",
+      "partner_type": "media",
+      "access_level": 35,
+      "permissions": [
+        {
+          "category": "dashboard",
+          "level": "full"
+        },
+        {
+          "category": "campaigns",
+          "level": "full"
+        },
+        {
+          "category": "wallet",
+          "level": "full"
+        },
+        {
+          "category": "reports",
+          "level": "view"
+        }
+      ],
+      "is_first_login": false,
+      "partner_id": "partner-003",
+      "parent_user_id": null
+    }
+  ]
+}

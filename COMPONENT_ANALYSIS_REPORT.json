@@ -1,0 +1,486 @@
+{
+  "used_components": {
+    "src/pages/Dashboard.tsx": [
+      "src/components/common/PermissionRefresherBanner"
+    ],
+    "src/pages/SignIn.tsx": [
+      "src/components/ui/button",
+      "src/components/ui/input",
+      "src/components/auth/AuthLayout"
+    ],
+    "src/pages/SignUp.tsx": [
+      "src/components/ui/button",
+      "src/components/ui/input",
+      "src/components/auth/AuthLayout"
+    ],
+    "src/pages/Hero.tsx": [
+      "src/components/ui/button",
+      "src/components/ui/input",
+      "src/components/ui/textarea",
+      "src/components/ui/radio-group",
+      "src/components/ui/label",
+      "src/components/landing/StatCard",
+      "src/components/landing/PartnershipCard",
+      "src/components/landing/TimelineStep",
+      "src/components/landing/PartnerCarousel"
+    ],
+    "src/pages/Onboarding.tsx": [
+      "src/components/onboarding/StepsList",
+      "src/components/onboarding/hooks/useStepProgression",
+      "src/components/onboarding/hooks/useOnboardingData",
+      "src/components/onboarding/steps/WalletStep",
+      "src/components/onboarding/steps/CampaignStep",
+      "src/components/onboarding/steps/UsersStep",
+      "src/components/onboarding/steps/TwoFactorStep",
+      "src/components/onboarding/steps/SocialMediaStep"
+    ],
+    "src/sections/DashboardSection.tsx": [
+      "src/components/common/PermissionWrapper",
+      "src/components/common/Loading",
+      "src/components/ui/card",
+      "src/components/ui/button",
+      "src/components/common/Wallet",
+      "src/components/common/MiniChart",
+      "src/components/common/NoCampaignCard",
+      "src/components/common/CreateCampaign",
+      "src/components/common/CreateProgramDialog",
+      "src/components/common/SuperAdminDashboard",
+      "src/ui/dashboard/LineChart",
+      "src/ui/dashboard/WalletBalanceCard",
+      "src/ui/dashboard/SmallCardsGrid",
+      "src/ui/dashboard/UpcomingCampaigns",
+      "src/ui/dashboard/RecentActivity",
+      "src/components/ui/Typography"
+    ],
+    "src/sections/CampaignSection.tsx": [
+      "src/components/ui/card",
+      "src/components/ui/Typography",
+      "src/components/ui/button",
+      "src/components/common/Loading",
+      "src/components/common/PermissionWrapper",
+      "src/components/common/CampaignDetails",
+      "src/components/common/ConfirmationDialog",
+      "src/components/common/CreateCampaign"
+    ],
+    "src/sections/UserSection.tsx": [
+      "src/components/ui/button",
+      "src/components/ui/input",
+      "src/components/ui/card",
+      "src/components/ui/tabs",
+      "src/components/ui/avatar",
+      "src/components/ui/select",
+      "src/components/ui/separator",
+      "src/components/ui/scroll-area",
+      "src/components/common/Loading",
+      "src/components/common/PermissionWrapper",
+      "src/components/common/AddUserDialog",
+      "src/components/common/ConfirmationDialog",
+      "src/components/common/ViewUserDialog",
+      "src/components/common/PartnerManagement"
+    ],
+    "src/sections/WalletSection.tsx": [
+      "src/components/common/Loading",
+      "src/components/ui/card",
+      "src/components/ui/button",
+      "src/components/ui/sheet",
+      "src/components/common/SuperAdminWalletSection",
+      "src/components/common/Wallet"
+    ],
+    "src/sections/ProgramSection.tsx": [
+      "src/components/ui/input",
+      "src/components/ui/button",
+      "src/components/ui/dropdown-menu",
+      "src/components/ui/table",
+      "src/components/common/Loading",
+      "src/components/common/CreateProgramDialog",
+      "src/components/common/CreateCurriculumDialog",
+      "src/components/common/ManageCurriculaDialog",
+      "src/components/common/CreateSubjectDialog",
+      "src/components/common/ManageSubjectsDialog",
+      "src/components/common/EditProgramDialog"
+    ],
+    "src/sections/SettingsSection.tsx": [
+      "src/components/ui/card",
+      "src/components/ui/button",
+      "src/components/ui/input",
+      "src/components/ui/label",
+      "src/components/ui/avatar",
+      "src/components/ui/badge",
+      "src/components/ui/Typography",
+      "src/components/common/ThemeButton"
+    ],
+    "src/sections/ReportsSection.tsx": [
+      "src/components/common/NoCampaignCard",
+      "src/components/common/ComingSoon",
+      "src/components/common/Loading"
+    ],
+    "src/sections/PaymentSection.tsx": ["src/components/common/NoCampaignCard"],
+    "src/sections/LockedSection.tsx": ["src/components/ui/card"]
+  },
+  "unused_components": [
+    "src/components/common/CampaignAssets.tsx",
+    "src/components/common/CreatePartnerDialog.tsx",
+    "src/components/common/ErrorBoundary.tsx",
+    "src/components/common/Logo.tsx",
+    "src/components/common/NotificationDropDown.tsx",
+    "src/components/common/PageNotFound.tsx",
+    "src/components/common/PermissionFallbacks.tsx",
+    "src/components/common/PinVerification.tsx",
+    "src/components/common/Profile.tsx",
+    "src/components/common/SocialMediaChannels.tsx",
+    "src/components/common/UserCredentialsDialog.tsx",
+    "src/components/common/WalletEditDialog.tsx",
+    "src/components/common/WalletSetUp.tsx",
+    "src/components/common/WithdrawalDialog.tsx",
+    "src/components/AddUsersDialog.tsx",
+    "src/components/alert.tsx",
+    "src/components/CrownIcon.tsx",
+    "src/components/DashboardLayout.tsx",
+    "src/components/Footer.tsx",
+    "src/components/Header.tsx",
+    "src/components/HeroHeader.tsx",
+    "src/components/HighlightIcon.tsx",
+    "src/components/LightningIcon.tsx",
+    "src/components/PageNotFound.tsx",
+    "src/components/Protected.tsx",
+    "src/components/RootLayout.tsx",
+    "src/components/SidebarContext.tsx",
+    "src/components/SidebarItem.tsx",
+    "src/components/SidebarRoot.tsx",
+    "src/components/SidebarSection.tsx",
+    "src/components/skeleton.tsx",
+    "src/components/SmileyIcon.tsx",
+    "src/components/SocialMediaLinksDialog.tsx",
+    "src/components/TwoFactorSetupDialog.tsx",
+    "src/components/resolveSidebarSections.ts",
+    "src/components/sidebar.config.ts",
+    "src/components/sidebar.styles.ts",
+    "src/components/useSidebarNavigation.ts"
+  ],
+  "redundant_components": [
+    {
+      "component_name": "AddUserDialog",
+      "paths": [
+        "src/components/common/AddUserDialog.tsx",
+        "src/components/AddUserDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "CampaignAssets",
+      "paths": [
+        "src/components/common/CampaignAssets.tsx",
+        "src/components/CampaignAssets.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "CampaignDetails",
+      "paths": [
+        "src/components/common/CampaignDetails.tsx",
+        "src/components/CampaignDetails.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "ComingSoon",
+      "paths": [
+        "src/components/common/ComingSoon.tsx",
+        "src/components/ComingSoon.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "ConfirmationDialog",
+      "paths": [
+        "src/components/common/ConfirmationDialog.tsx",
+        "src/components/ConfirmationDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "CreateCampaign",
+      "paths": [
+        "src/components/common/CreateCampaign.tsx",
+        "src/components/CreateCampaign.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "CreateCurriculumDialog",
+      "paths": [
+        "src/components/common/CreateCurriculumDialog.tsx",
+        "src/components/CreateCurriculumDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "CreatePartnerDialog",
+      "paths": [
+        "src/components/common/CreatePartnerDialog.tsx",
+        "src/components/CreatePartnerDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "CreateProgramDialog",
+      "paths": [
+        "src/components/common/CreateProgramDialog.tsx",
+        "src/components/CreateProgramDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "CreateSubjectDialog",
+      "paths": [
+        "src/components/common/CreateSubjectDialog.tsx",
+        "src/components/CreateSubjectDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "EditProgramDialog",
+      "paths": [
+        "src/components/common/EditProgramDialog.tsx",
+        "src/components/EditProgramDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "ErrorBoundary",
+      "paths": [
+        "src/components/common/ErrorBoundary.tsx",
+        "src/components/ErrorBoundary.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "Loading",
+      "paths": [
+        "src/components/common/Loading.tsx",
+        "src/components/Loading.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "Logo",
+      "paths": ["src/components/common/Logo.tsx", "src/components/Logo.tsx"],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "ManageCurriculaDialog",
+      "paths": [
+        "src/components/common/ManageCurriculaDialog.tsx",
+        "src/components/ManageCurriculaDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "ManageSubjectsDialog",
+      "paths": [
+        "src/components/common/ManageSubjectsDialog.tsx",
+        "src/components/ManageSubjectsDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "MiniChart",
+      "paths": [
+        "src/components/common/MiniChart.tsx",
+        "src/components/MiniChart.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "NoCampaignCard",
+      "paths": [
+        "src/components/common/NoCampaignCard.tsx",
+        "src/components/NoCampaignCard.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "NotificationDropDown",
+      "paths": [
+        "src/components/common/NotificationDropDown.tsx",
+        "src/components/NotificationDropDown.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "PageNotFound",
+      "paths": [
+        "src/components/common/PageNotFound.tsx",
+        "src/components/PageNotFound.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "PartnerManagement",
+      "paths": [
+        "src/components/common/PartnerManagement.tsx",
+        "src/components/PartnerManagement.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "PermissionFallbacks",
+      "paths": [
+        "src/components/common/PermissionFallbacks.tsx",
+        "src/components/PermissionFallbacks.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "PermissionRefresherBanner",
+      "paths": [
+        "src/components/common/PermissionRefresherBanner.tsx",
+        "src/components/PermissionRefresherBanner.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "PermissionWrapper",
+      "paths": [
+        "src/components/common/PermissionWrapper.tsx",
+        "src/components/PermissionWrapper.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "PinVerification",
+      "paths": [
+        "src/components/common/PinVerification.tsx",
+        "src/components/PinVerification.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "Profile",
+      "paths": [
+        "src/components/common/Profile.tsx",
+        "src/components/Profile.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "SuperAdminDashboard",
+      "paths": [
+        "src/components/common/SuperAdminDashboard.tsx",
+        "src/components/SuperAdminDashboard.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "SuperAdminWalletSection",
+      "paths": [
+        "src/components/common/SuperAdminWalletSection.tsx",
+        "src/components/SuperAdminWalletSection.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "ThemeButton",
+      "paths": [
+        "src/components/common/ThemeButton.tsx",
+        "src/components/ThemeButton.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "UserCredentialsDialog",
+      "paths": [
+        "src/components/common/UserCredentialsDialog.tsx",
+        "src/components/UserCredentialsDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "ViewUserDialog",
+      "paths": [
+        "src/components/common/ViewUserDialog.tsx",
+        "src/components/ViewUserDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "Wallet",
+      "paths": [
+        "src/components/common/Wallet.tsx",
+        "src/components/Wallet.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "WalletEditDialog",
+      "paths": [
+        "src/components/common/WalletEditDialog.tsx",
+        "src/components/WalletEditDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "WalletSetUp",
+      "paths": [
+        "src/components/common/WalletSetUp.tsx",
+        "src/components/WalletSetUp.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    },
+    {
+      "component_name": "WithdrawalDialog",
+      "paths": [
+        "src/components/common/WithdrawalDialog.tsx",
+        "src/components/WithdrawalDialog.tsx"
+      ],
+      "status": "REDUNDANT",
+      "note": "Same component exists in both common and root directories. Root version should be consolidated."
+    }
+  ],
+  "summary": {
+    "total_components_analyzed": 95,
+    "used_components_count": 54,
+    "unused_components_count": 14,
+    "redundant_pairs": 31,
+    "architecture_issues": {
+      "organization_problem": "Components are duplicated across src/components/common/ and src/components/ root directory",
+      "severity": "HIGH",
+      "impact": "Code maintainability issue - same components exist in two locations, causing confusion and potential inconsistency",
+      "recommendation": "Consolidate all components into src/components/common/ and remove root-level duplicates. Update all import statements to point to common directory."
+    }
+  }
+}

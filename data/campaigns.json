@@ -1,0 +1,6 @@
+[
+  {
+    "status": "error",
+    "errorMessage": "[Request ID: 1645e509fe7876e6] Server Error\nCould not find public function for 'campaigns:list'. Did you forget to run `npx convex dev` or `npx convex deploy`?\n"
+  }
+]

@@ -1,0 +1,6 @@
+[
+  {
+    "status": "error",
+    "errorMessage": "[Request ID: 3c2f54f640b3359f] Server Error\nCould not find public function for 'partners:list'. Did you forget to run `npx convex dev` or `npx convex deploy`?\n"
+  }
+]

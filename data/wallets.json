@@ -1,0 +1,6 @@
+[
+  {
+    "status": "error",
+    "errorMessage": "[Request ID: a0c98cb28a490a89] Server Error\nCould not find public function for 'wallets:list'. Did you forget to run `npx convex dev` or `npx convex deploy`?\n"
+  }
+]

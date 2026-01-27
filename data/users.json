@@ -1,0 +1,6 @@
+[
+  {
+    "status": "error",
+    "errorMessage": "[Request ID: 60d5655a904e6d6a] Server Error\nCould not find public function for 'users:list'. Did you forget to run `npx convex dev` or `npx convex deploy`?\n"
+  }
+]

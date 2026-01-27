@@ -1,0 +1,45 @@
+{
+  "exportedAt": "2025-12-17T00:34:04.598Z",
+  "convexUrl": "https://clear-goose-379.convex.cloud",
+  "tables": [
+    {
+      "table": "users",
+      "rowsExported": 1,
+      "success": true,
+      "error": null
+    },
+    {
+      "table": "partners",
+      "rowsExported": 1,
+      "success": true,
+      "error": null
+    },
+    {
+      "table": "campaigns",
+      "rowsExported": 1,
+      "success": true,
+      "error": null
+    },
+    {
+      "table": "transactions",
+      "rowsExported": 1,
+      "success": true,
+      "error": null
+    },
+    {
+      "table": "wallets",
+      "rowsExported": 1,
+      "success": true,
+      "error": null
+    },
+    {
+      "table": "audit_logs",
+      "rowsExported": 1,
+      "success": true,
+      "error": null
+    }
+  ],
+  "totalRows": 6,
+  "totalTables": 6,
+  "successCount": 6
+}

@@ -1,0 +1,154 @@
+{
+  "campaigns": [
+    {
+      "id": "campaign-001",
+      "name": "Summer Campaign 2024",
+      "partner_id": "partner-001",
+      "created_by_user_id": "user-002",
+      "created_by_user_role": "admin_partner",
+      "program_id": "program-001",
+      "status": "active",
+      "promo_code": "SUMMER2024",
+      "duration_start": "2024-06-01T00:00:00Z",
+      "duration_end": "2024-08-31T23:59:59Z",
+      "budget": 50000,
+      "spent": 35000,
+      "revenue_projection": 75000,
+      "target_signups": 150,
+      "daily_target": 5,
+      "whatsapp_number": "254712345678",
+      "bundled_offers": {
+        "min_lessons": 10,
+        "total_price": 3200
+      },
+      "discount_rule": {
+        "price_per_lesson": 320
+      },
+      "revenue_share": {
+        "partner_percentage": 60,
+        "sqooli_percentage": 40
+      },
+      "created_at": "2024-05-15T10:30:00Z"
+    },
+    {
+      "id": "campaign-002",
+      "name": "Back to School Drive",
+      "partner_id": "partner-001",
+      "created_by_user_id": "user-003",
+      "created_by_user_role": "partner_member",
+      "program_id": "program-002",
+      "status": "active",
+      "promo_code": "SCHOOL2024",
+      "duration_start": "2024-09-01T00:00:00Z",
+      "duration_end": "2024-11-30T23:59:59Z",
+      "budget": 75000,
+      "spent": 62000,
+      "revenue_projection": 120000,
+      "target_signups": 200,
+      "daily_target": 7,
+      "whatsapp_number": "254723456789",
+      "bundled_offers": {
+        "min_lessons": 15,
+        "total_price": 4100
+      },
+      "discount_rule": {
+        "price_per_lesson": 273.33
+      },
+      "revenue_share": {
+        "partner_percentage": 55,
+        "sqooli_percentage": 45
+      },
+      "created_at": "2024-08-20T14:15:00Z"
+    },
+    {
+      "id": "campaign-003",
+      "name": "Holiday Promotion",
+      "partner_id": "partner-001",
+      "created_by_user_id": "user-004",
+      "created_by_user_role": "partner_member",
+      "program_id": "program-003",
+      "status": "active",
+      "promo_code": "HOLIDAY2024",
+      "duration_start": "2024-12-01T00:00:00Z",
+      "duration_end": "2024-12-31T23:59:59Z",
+      "budget": 100000,
+      "spent": 78000,
+      "revenue_projection": 180000,
+      "target_signups": 250,
+      "daily_target": 8,
+      "whatsapp_number": "254734567890",
+      "bundled_offers": {
+        "min_lessons": 20,
+        "total_price": 5200
+      },
+      "discount_rule": {
+        "price_per_lesson": 260
+      },
+      "revenue_share": {
+        "partner_percentage": 65,
+        "sqooli_percentage": 35
+      },
+      "created_at": "2024-11-10T09:45:00Z"
+    },
+    {
+      "id": "campaign-004",
+      "name": "New Year Sale",
+      "partner_id": "partner-001",
+      "created_by_user_id": "user-002",
+      "created_by_user_role": "admin_partner",
+      "program_id": "program-001",
+      "status": "draft",
+      "promo_code": "NEWYEAR2025",
+      "duration_start": "2025-01-15T00:00:00Z",
+      "duration_end": "2025-02-15T23:59:59Z",
+      "budget": 60000,
+      "spent": 0,
+      "revenue_projection": 95000,
+      "target_signups": 120,
+      "daily_target": 4,
+      "whatsapp_number": "254745678901",
+      "bundled_offers": {
+        "min_lessons": 12,
+        "total_price": 3800
+      },
+      "discount_rule": {
+        "price_per_lesson": 316.67
+      },
+      "revenue_share": {
+        "partner_percentage": 58,
+        "sqooli_percentage": 42
+      },
+      "created_at": "2025-01-05T11:20:00Z"
+    },
+    {
+      "id": "campaign-005",
+      "name": "Valentine's Special",
+      "partner_id": "partner-003",
+      "created_by_user_id": "user-006",
+      "created_by_user_role": "partner_member",
+      "program_id": "program-002",
+      "status": "expired",
+      "promo_code": "LOVE2025",
+      "duration_start": "2025-02-01T00:00:00Z",
+      "duration_end": "2025-02-28T23:59:59Z",
+      "budget": 45000,
+      "spent": 0,
+      "revenue_projection": 70000,
+      "target_signups": 100,
+      "daily_target": 3,
+      "whatsapp_number": "254756789012",
+      "bundled_offers": {
+        "min_lessons": 8,
+        "total_price": 2500
+      },
+      "discount_rule": {
+        "price_per_lesson": 312.5
+      },
+      "revenue_share": {
+        "partner_percentage": 62,
+        "sqooli_percentage": 38
+      },
+      "created_at": "2025-01-10T15:00:00Z"
+    }
+  ]
+}

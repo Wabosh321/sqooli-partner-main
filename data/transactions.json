@@ -1,0 +1,6 @@
+[
+  {
+    "status": "error",
+    "errorMessage": "[Request ID: fece6798bcbe86cb] Server Error\nCould not find public function for 'transactions:list'. Did you forget to run `npx convex dev` or `npx convex deploy`?\n"
+  }
+]

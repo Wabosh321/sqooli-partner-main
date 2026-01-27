@@ -1,0 +1,52 @@
+{
+  "importedAt": "2025-12-17T00:34:11.915Z",
+  "supabaseUrl": "https://rpmjxrcmlnffbwunihkd.supabase.co",
+  "tables": [
+    {
+      "table": "users",
+      "rowsImported": 0,
+      "rowsFailed": 1,
+      "success": false,
+      "error": null
+    },
+    {
+      "table": "partners",
+      "rowsImported": 0,
+      "rowsFailed": 1,
+      "success": false,
+      "error": null
+    },
+    {
+      "table": "campaigns",
+      "rowsImported": 0,
+      "rowsFailed": 1,
+      "success": false,
+      "error": null
+    },
+    {
+      "table": "transactions",
+      "rowsImported": 0,
+      "rowsFailed": 1,
+      "success": false,
+      "error": null
+    },
+    {
+      "table": "wallets",
+      "rowsImported": 0,
+      "rowsFailed": 1,
+      "success": false,
+      "error": null
+    },
+    {
+      "table": "audit_logs",
+      "rowsImported": 0,
+      "rowsFailed": 1,
+      "success": false,
+      "error": null
+    }
+  ],
+  "totalImported": 0,
+  "totalFailed": 6,
+  "totalTables": 6,
+  "successCount": 0
+}
