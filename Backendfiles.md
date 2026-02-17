@@ -1,0 +1,37 @@
+# Backend + API Files Inventory
+
+- eslint.config.js
+- generate_schema_report.js
+- introspect_mcp.js
+- packages/jelly-logger-system/src/api/routes/log.ts
+- packages/jelly-logger-system/src/backend/middleware/expressMiddleware.ts
+- packages/jelly-logger-system/src/core/LogLevel.ts
+- packages/jelly-logger-system/src/core/Logger.ts
+- packages/jelly-logger-system/src/core/interfaces/ILogEntry.ts
+- packages/jelly-logger-system/src/core/interfaces/ILoggerConfig.ts
+- packages/jelly-logger-system/src/core/interfaces/ILoggerContext.ts
+- packages/jelly-logger-system/src/core/interfaces/ITransport.ts
+- packages/jelly-logger-system/src/index.ts
+- packages/jelly-logger-system/src/transports/APITransport.ts
+- packages/jelly-logger-system/src/transports/ConsoleTransport.ts
+- packages/jelly-logger-system/src/transports/DatabaseTransport.ts
+- packages/jelly-logger-system/src/utils/sanitizers.ts
+- postcss.config.js
+- scripts/backup-supabase.ts
+- scripts/backupData.ts
+- scripts/check-env.js
+- scripts/createSuperAdmin.ts
+- scripts/export-convex-data.ts
+- scripts/finalize-migration.ts
+- scripts/import-to-supabase.ts
+- scripts/run-migration.ts
+- scripts/seedDatabase.ts
+- scripts/seed_team_members_from_json.ts
+- scripts/seed_transactions_from_json.ts
+- scripts/seed_user_activity_from_json.ts
+- scripts/seed_user_metrics_from_json.ts
+- scripts/seed_wallets_from_json.ts
+- scripts/transform-convex-data.ts
+- scripts/verify-migration.ts
+- src/application/dashboard/__tests__/useDashboardMetrics.test.ts
+- src/application/dashboard/__tests__/useUpcomingCampaigns.test.ts
