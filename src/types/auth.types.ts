@@ -8,7 +8,7 @@ export interface RegisterFormData {
   username: string;
   password: string;
   confirmPassword: string;
-  partnerType?: 'affiliate' | 'media' | 'corporate' | 'institutional'; // Partner type selection
+  partnerType?: "affiliate" | "media" | "corporate" | "institutional"; // Partner type selection
 }
 
 export interface RegisterPayload {
@@ -67,54 +67,34 @@ export interface LoginResponse {
 
 export interface AuthenticatedUser {
   id: string;
-  _id?: string; // legacy Convex id (frontend compatibility)
-  role?: string;
-  partner_role?: string; // User's role within their partner type
   email: string;
-  user_metadata?: Record<string, unknown>;
-  email_confirmed_at?: string;
+  role?: string;
+  partner_id?: string | null;
+  access_level?: integer;
+  permissions?: Record<string, unknown>;
+  is_first_login?: boolean;
+  is_active?: boolean;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface ConvexUser {
   id: string;
-  _id: string;
   email: string;
-  role: string; // 'admin', 'member', or 'partner'
+  role: string;
   partner_id?: string | null;
-  partner_role?: string; // User's role within their partner type
   is_first_login?: boolean;
 }
 
 export interface Partner {
   id: string;
-  _id?: string; // legacy Convex id (frontend compatibility)
-  convex_id?: string | null;
-  auth_id?: string;
-  name: string;
-  email: string;
-  phone?: string;
-  is_first_login?: boolean;
-  permission_ids?: string[];
-  username?: string;
-  role?: string;
-  extension?: string;
-  is_active?: boolean;
-  is_account_activated?: boolean;
-  partner_type?: string; // 'affiliate' | 'media' | 'corporate' | 'institutional'
-  // Onboarding tracking
+  org_name: string;
+  partner_type: string;
+  access_level: number;
+  commission_rate: number;
   onboarding_completed?: boolean;
-  wallet_setup_completed?: boolean;
-  campaign_created?: boolean;
-  two_factor_setup_completed?: boolean;
-  social_media_added?: boolean;
-  users_added?: boolean;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface ConvexPartner extends Partner {
-  _id: string;
 }
 
 export interface UseAuthReturn {
@@ -123,37 +103,20 @@ export interface UseAuthReturn {
   loading: boolean;
   error: string | null;
   isFirstLogin: boolean;
-  loginMethod: 'supabase' | null;
+  loginMethod: "supabase" | null;
   refetch?: () => void | Promise<void>;
 }
 
-export function getDisplayName(user: AuthenticatedUser | Partner | null): string {
-  if (!user) return '';
-  if ('name' in user && user.name) return user.name;
-  return (user as AuthenticatedUser).email || '';
+export function getDisplayName(user: AuthenticatedUser | null): string {
+  if (!user) return "";
+  return user.email || "";
 }
 
-export function getUserInitials(user: AuthenticatedUser | Partner | null): string {
-  if (!user) return '';
-  const name = 'name' in user && user.name ? user.name : (user as AuthenticatedUser).email || '';
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+export function getUserEmail(user: AuthenticatedUser | null): string {
+  return user?.email || "";
 }
 
-export function getUserEmail(user: AuthenticatedUser | Partner | null): string {
-  return user?.email || '';
-}
-
-export function getUserRole(user: AuthenticatedUser | Partner | null): string {
-  if (!user) return '';
-  return (user as Partner).role || '';
-}
-
-export function isConvexUser(user: AuthenticatedUser | Partner | null | undefined): boolean {
-  if (!user) return false;
-  return typeof (user as any)._id === 'string' || typeof (user as any).convex_id === 'string';
+export function getUserRole(user: AuthenticatedUser | null): string {
+  if (!user) return "";
+  return user.role || "";
 }

@@ -1,20 +1,23 @@
-import { useAuth } from './useAuth';
-import { 
-  PartnerTypeSlug, 
+import { useEffect, useState } from "react";
+import { useAuth } from "./useAuth";
+import { supabase } from "../lib/supabase";
+import {
+  PartnerTypeSlug,
   PartnerRole,
   PartnerPermission,
   PERMISSIONS_BY_PARTNER_TYPE,
   DASHBOARD_SECTIONS_BY_PARTNER_TYPE,
   ADMIN_ROLES_FOR_PARTNER_TYPE,
   type DashboardSection,
-  type PartnerWithType,
-} from '../types/partner.types';
+} from "../types/partner.types";
+import type { Partner } from "../types/auth.types";
 
 export interface UsePartnerPermissionsReturn {
-  partner: PartnerWithType | null;
+  partner: Partner | null;
   partnerType: PartnerTypeSlug | null;
-  accessLevel: number; // 0-100
+  accessLevel: number;
   commissionRate: number;
+  permissions: any[];
   hasPermission: (permission: PartnerPermission) => boolean;
   hasRole: (role: PartnerRole) => boolean;
   canAccessSection: (section: DashboardSection) => boolean;
@@ -24,46 +27,64 @@ export interface UsePartnerPermissionsReturn {
   isCorporatePartner: () => boolean;
   isInstitutionalPartner: () => boolean;
   isAffiliatePartner: () => boolean;
+  loading: boolean;
 }
 
 export function usePartnerPermissions(): UsePartnerPermissionsReturn {
   const { partner, user } = useAuth();
+  const [permissions, setPermissions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Get partner type - handle both direct partner_type field and nested relationship
-  const partnerType: PartnerTypeSlug | null = (
-    (partner as any)?.partner_type?.slug || 
-    (partner as any)?.partner_type || 
-    null
-  ) as PartnerTypeSlug | null;
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
 
-  // Get user's partner role from user.partner_role field
-  const userPartnerRole: PartnerRole | null = (user?.partner_role as PartnerRole) || null;
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("permissions")
+          .eq("id", user.id)
+          .single();
 
-  // ============================================================================
-  // PERMISSION CHECKS
-  // ============================================================================
+        if (error) throw error;
 
-  /**
-   * Check if user has a specific permission
-   */
+        setPermissions(data?.permissions || []);
+      } catch (error) {
+        setPermissions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPermissions();
+  }, [user?.id]);
+
+  const partnerType: PartnerTypeSlug | null =
+    (partner?.partner_type as PartnerTypeSlug) || null;
+
+  const userRole: string | null = user?.role || null;
+
   const hasPermission = (permission: PartnerPermission): boolean => {
+    if (permissions.length > 0) {
+      return permissions.some(
+        (p) => p.category === permission || p.key === permission,
+      );
+    }
+
     if (!partnerType) return false;
 
     const typePermissions = PERMISSIONS_BY_PARTNER_TYPE[partnerType];
     return typePermissions?.includes(permission) ?? false;
   };
 
-  /**
-   * Check if user has a specific partner role
-   */
   const hasRole = (role: PartnerRole): boolean => {
-    if (!userPartnerRole) return false;
-    return userPartnerRole === role;
+    if (!userRole) return false;
+    return (userRole as PartnerRole) === role;
   };
 
-  /**
-   * Check if user can access a specific dashboard section
-   */
   const canAccessSection = (section: DashboardSection): boolean => {
     if (!partnerType) return false;
 
@@ -71,42 +92,32 @@ export function usePartnerPermissions(): UsePartnerPermissionsReturn {
     return availableSections?.includes(section) ?? false;
   };
 
-  /**
-   * Get all available dashboard sections for this partner type
-   */
   const getAvailableSections = (): DashboardSection[] => {
     if (!partnerType) return [];
     return DASHBOARD_SECTIONS_BY_PARTNER_TYPE[partnerType] || [];
   };
 
-  /**
-   * Check if user is an admin for their partner type
-   */
   const isPartnerAdmin = (): boolean => {
-    if (!partnerType || !userPartnerRole) return false;
+    if (!partnerType || !userRole) return false;
 
     const adminRoles = ADMIN_ROLES_FOR_PARTNER_TYPE[partnerType];
-    return adminRoles?.includes(userPartnerRole) ?? false;
+    return adminRoles?.includes(userRole as PartnerRole) ?? false;
   };
 
-  // ============================================================================
-  // PARTNER TYPE CHECKS
-  // ============================================================================
-
   const isMediaPartner = (): boolean => partnerType === PartnerTypeSlug.MEDIA;
-  const isCorporatePartner = (): boolean => partnerType === PartnerTypeSlug.CORPORATE;
-  const isInstitutionalPartner = (): boolean => partnerType === PartnerTypeSlug.INSTITUTIONAL;
-  const isAffiliatePartner = (): boolean => partnerType === PartnerTypeSlug.AFFILIATE;
-
-  // ============================================================================
-  // RETURN
-  // ============================================================================
+  const isCorporatePartner = (): boolean =>
+    partnerType === PartnerTypeSlug.CORPORATE;
+  const isInstitutionalPartner = (): boolean =>
+    partnerType === PartnerTypeSlug.INSTITUTIONAL;
+  const isAffiliatePartner = (): boolean =>
+    partnerType === PartnerTypeSlug.AFFILIATE;
 
   return {
-    partner: (partner as any as PartnerWithType) || null,
+    partner,
     partnerType,
-    accessLevel: (partner as any)?.access_level || 0,
-    commissionRate: (partner as any)?.commission_rate || 0,
+    accessLevel: partner?.access_level || 0,
+    commissionRate: partner?.commission_rate || 0,
+    permissions,
     hasPermission,
     hasRole,
     canAccessSection,
@@ -116,5 +127,6 @@ export function usePartnerPermissions(): UsePartnerPermissionsReturn {
     isCorporatePartner,
     isInstitutionalPartner,
     isAffiliatePartner,
+    loading,
   };
 }

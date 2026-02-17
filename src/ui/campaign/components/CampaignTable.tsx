@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
 import { Eye, Trash2, Lock } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import type { Campaign } from "../../../domain/campaign/types";
-import programsData from "../../../auth/data/programs.json";
+import { supabase } from "../../../lib/supabase";
 
 export interface CampaignTableProps {
   campaigns: Campaign[];
@@ -23,6 +23,35 @@ export function CampaignTable({
   onView,
   onDelete,
 }: CampaignTableProps) {
+  const [programs, setPrograms] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadPrograms = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("programs")
+          .select("id, name");
+
+        if (error) throw error;
+
+        // Create a map of program id -> name
+        const programMap = (data || []).reduce(
+          (acc: Record<string, string>, p: any) => {
+            acc[p.id] = p.name;
+            return acc;
+          },
+          {},
+        );
+
+        setPrograms(programMap);
+      } catch (err) {
+        console.error("Error loading programs:", err);
+      }
+    };
+
+    loadPrograms();
+  }, []);
+
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
@@ -37,8 +66,7 @@ export function CampaignTable({
 
   const getProgramName = (programId?: string) => {
     if (!programId) return "N/A";
-    const program = programsData.programs.find((p) => p.id === programId);
-    return program?.name || "N/A";
+    return programs[programId] || "N/A";
   };
 
   return (

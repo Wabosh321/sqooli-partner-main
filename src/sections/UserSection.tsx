@@ -26,7 +26,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "../components/ui/tabs";
-import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import {
   Select,
   SelectTrigger,
@@ -34,12 +33,16 @@ import {
   SelectContent,
   SelectItem,
 } from "../components/ui/select";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Separator } from "../components/ui/separator";
 import { ScrollArea } from "../components/ui/scroll-area";
-import { Loading } from "../components/common/Loading";
+import { toast } from "sonner";
+
+import { useDeviceSize } from "../hooks/useDeviceSize";
 import { useAuth } from "../hooks/useAuth";
 import { usePermissions } from "../hooks/usePermission";
 import { usePartnerAccess } from "../hooks/usePartnerAccess";
+import { Loading } from "../components/common/Loading";
 import { PermissionWrapper } from "../components/common/PermissionWrapper";
 import AddUserDialog from "../components/common/AddUserDialog";
 import { ConfirmDialog } from "../components/common/ConfirmationDialog";
@@ -53,10 +56,9 @@ import {
   getResponsivePadding,
   getSectionContainerStyle,
 } from "./SettingsSection";
-import { useDeviceSize } from "../hooks/useDeviceSize";
-import createdUsersData from "../auth/data/created_users.json";
-import userActivityData from "../auth/data/user_activity.json";
-import userMetricsData from "../auth/data/user_metrics.json";
+
+// PHASE 4: Supabase integration for users and audit logs
+import { supabase } from "../lib/supabase";
 
 // Helper functions for avatars
 function getInitials(name: string): string {
@@ -128,64 +130,92 @@ export default function UserSection() {
     );
   }
 
-  // JSON-based: Load child users and activities
+  // PHASE 4: Load users and audit logs from Supabase
   const [users, setUsers] = useState<any[] | undefined>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      if (!user) {
-        setUsers([]);
-        setAuditLogs([]);
-        return;
-      }
-
-      // Get child users created by this user
-      const childUsers = createdUsersData.created_users.filter(
-        (cu: any) => cu.parent_user_id === user.id,
-      );
-
-      // Map child users to ViewUser format with metrics
-      const usersWithMetrics = childUsers.map((cu: any) => {
-        const metrics = userMetricsData.user_metrics.find(
-          (m: any) => m.user_id === cu.id,
-        );
-        return {
-          _id: cu.id,
-          name: cu.full_name,
-          email: cu.email,
-          role: cu.role,
-          is_account_activated: cu.is_active,
-          access_level: cu.access_level,
-          partner_type: cu.partner_type,
-          metrics: metrics || {},
-        };
-      });
-
-      setUsers(usersWithMetrics);
-
-      // Get activities for this user and their child users
-      const relevantActivities = userActivityData.user_activities.filter(
-        (activity: any) => {
-          if (activity.user_id === user.id) return true;
-          if (activity.parent_user_id === user.id) return true;
-          return false;
-        },
-      );
-
-      // Sort by timestamp descending
-      const sortedActivities = [...relevantActivities].sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      );
-
-      setAuditLogs(sortedActivities);
-    } catch (err) {
-      console.error("UserSection: error loading data", err);
+    if (!user?.id) {
       setUsers([]);
       setAuditLogs([]);
+      setUsersLoading(false);
+      return;
     }
-  }, [user]);
+
+    const loadData = async () => {
+      try {
+        // Fetch users created by this user from auth.users
+        const { data: childUsers, error: usersError } = await supabase
+          .from("auth.users")
+          .select("*")
+          .eq("created_by_user_id", user.id);
+
+        if (usersError) throw usersError;
+
+        // Transform to ViewUser format
+        const usersWithMetrics = (childUsers || []).map((cu: any) => ({
+          _id: cu.id,
+          name: cu.user_metadata?.full_name || cu.email,
+          email: cu.email,
+          role: cu.user_metadata?.role || "user",
+          is_account_activated: !!cu.confirmed_at,
+          access_level: cu.user_metadata?.access_level || "read",
+          partner_type: cu.user_metadata?.partner_type,
+        }));
+
+        setUsers(usersWithMetrics);
+
+        // Fetch audit logs for this user
+        const { data: activities, error: activitiesError } = await supabase
+          .from("user_activity_log")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(100);
+
+        if (activitiesError) throw activitiesError;
+
+        setAuditLogs(activities || []);
+      } catch (err) {
+        console.error("UserSection: error loading data", err);
+        toast.error("Failed to load users and audit logs");
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+
+    loadData();
+
+    // PHASE 4: Subscribe to real-time user activity changes
+    const activitySubscription = supabase
+      .channel("user_activity_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_activity_log",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setAuditLogs((prev) => [payload.new, ...prev]);
+          } else if (payload.eventType === "UPDATE") {
+            setAuditLogs((prev) =>
+              prev.map((log) =>
+                log.id === payload.new.id ? payload.new : log,
+              ),
+            );
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      activitySubscription.unsubscribe();
+    };
+  }, [user?.id]);
 
   // Helper handlers
   const handleViewUser = (u: ViewUser) => {
@@ -273,7 +303,10 @@ export default function UserSection() {
 
   return (
     <div style={getSectionContainerStyle(padding)}>
-      <div className="mx-auto" style={{ width: "max(88.33vw, 1272px)", maxWidth: "100%" }}>
+      <div
+        className="mx-auto"
+        style={{ width: "max(88.33vw, 1272px)", maxWidth: "100%" }}
+      >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Sidebar - Audit Logs */}
           <div className="lg:col-span-3">
@@ -366,225 +399,237 @@ export default function UserSection() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search users..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-8"
-                  />
-                </div>
+                {usersLoading ? (
+                  <Loading />
+                ) : (
+                  <>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search users..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 pr-8"
+                      />
+                    </div>
 
-                <Tabs defaultValue="active" className="w-full">
-                  <TabsList>
-                    <TabsTrigger value="active">
-                      Active ({activeUsers.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="inactive">
-                      Inactive ({inactiveUsers.length})
-                    </TabsTrigger>
-                  </TabsList>
+                    <Tabs defaultValue="active" className="w-full">
+                      <TabsList>
+                        <TabsTrigger value="active">
+                          Active ({activeUsers.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="inactive">
+                          Inactive ({inactiveUsers.length})
+                        </TabsTrigger>
+                      </TabsList>
 
-                  <TabsContent value="active" className="space-y-3 mt-4">
-                    {activeUsers.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        No active users
-                      </p>
-                    ) : (
-                      activeUsers.map((user) => (
-                        <div
-                          key={user._id}
-                          className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-lg transition-colors group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarFallback
-                                className={`${getAvatarColor(user.name)} text-white`}
-                              >
-                                {getInitials(user.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-sm font-medium">{user.name}</p>
-                              <p className="text-xs text-muted-foreground capitalize">
-                                {user.role.replace(/_/g, " ")}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleViewUser(user as ViewUser)}
-                              className="hover:bg-primary/10 hover:text-primary"
+                      <TabsContent value="active" className="space-y-3 mt-4">
+                        {activeUsers.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-8">
+                            No active users
+                          </p>
+                        ) : (
+                          activeUsers.map((user) => (
+                            <div
+                              key={user._id}
+                              className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-lg transition-colors group"
                             >
-                              <Eye className="h-4 w-4 text-primary group-hover:text-primary" />
-                            </Button>
-                            {canManageUsers ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleToggleActivation(user._id, false)
-                                }
-                                className="hover:bg-destructive/10 hover:text-destructive"
-                              >
-                                <UserX className="h-4 w-4 text-destructive group-hover:text-destructive" />
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                disabled
-                                title="No permission"
-                              >
-                                <Lock className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                            )}
-                            {/* Role edit dropdown for partner admins */}
-                            {canManageUsers &&
-                              (user?.role === "admin_partner" ||
-                                user?.role === "super_admin") && (
-                                <Select
-                                  value={user.role}
-                                  onValueChange={(val) =>
-                                    updateUserRole(user._id, val)
+                              <div className="flex items-center gap-3">
+                                <Avatar>
+                                  <AvatarFallback
+                                    className={`${getAvatarColor(user.name)} text-white`}
+                                  >
+                                    {getInitials(user.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {user.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground capitalize">
+                                    {user.role.replace(/_/g, " ")}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    handleViewUser(user as ViewUser)
                                   }
+                                  className="hover:bg-primary/10 hover:text-primary"
                                 >
-                                  <SelectTrigger className="w-40">
-                                    <SelectValue placeholder={user.role} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="viewer">
-                                      Viewer
-                                    </SelectItem>
-                                    <SelectItem value="campaign_manager">
-                                      Campaign Manager
-                                    </SelectItem>
-                                    <SelectItem value="accountant">
-                                      Accountant
-                                    </SelectItem>
-                                    <SelectItem value="merchant_admin">
-                                      Merchant Admin
-                                    </SelectItem>
-                                    <SelectItem value="media_partner">
-                                      Media Partner
-                                    </SelectItem>
-                                    <SelectItem value="admin_partner">
-                                      Admin Partner
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="inactive" className="space-y-3 mt-4">
-                    {inactiveUsers.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        No inactive users
-                      </p>
-                    ) : (
-                      inactiveUsers.map((u) => (
-                        <div
-                          key={u._id}
-                          className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-lg transition-colors group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarFallback
-                                className={`${getAvatarColor(u.name)} text-white`}
-                              >
-                                {getInitials(u.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-sm font-medium">{u.name}</p>
-                              <p className="text-xs text-muted-foreground capitalize">
-                                {u.role.replace(/_/g, " ")}
-                              </p>
+                                  <Eye className="h-4 w-4 text-primary group-hover:text-primary" />
+                                </Button>
+                                {canManageUsers ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      handleToggleActivation(user._id, false)
+                                    }
+                                    className="hover:bg-destructive/10 hover:text-destructive"
+                                  >
+                                    <UserX className="h-4 w-4 text-destructive group-hover:text-destructive" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled
+                                    title="No permission"
+                                  >
+                                    <Lock className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                )}
+                                {/* Role edit dropdown for partner admins */}
+                                {canManageUsers &&
+                                  (user?.role === "admin_partner" ||
+                                    user?.role === "super_admin") && (
+                                    <Select
+                                      value={user.role}
+                                      onValueChange={(val) =>
+                                        updateUserRole(user._id, val)
+                                      }
+                                    >
+                                      <SelectTrigger className="w-40">
+                                        <SelectValue placeholder={user.role} />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="viewer">
+                                          Viewer
+                                        </SelectItem>
+                                        <SelectItem value="campaign_manager">
+                                          Campaign Manager
+                                        </SelectItem>
+                                        <SelectItem value="accountant">
+                                          Accountant
+                                        </SelectItem>
+                                        <SelectItem value="merchant_admin">
+                                          Merchant Admin
+                                        </SelectItem>
+                                        <SelectItem value="media_partner">
+                                          Media Partner
+                                        </SelectItem>
+                                        <SelectItem value="admin_partner">
+                                          Admin Partner
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleViewUser(u as ViewUser)}
-                              className="hover:bg-primary/10 hover:text-primary"
-                            >
-                              <Eye className="h-4 w-4 text-primary group-hover:text-primary" />
-                            </Button>
-                            {canManageUsers ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleToggleActivation(u._id, true)
-                                }
-                                className="hover:bg-secondary/10 hover:text-secondary"
-                              >
-                                <UserCheck className="h-4 w-4 text-secondary group-hover:text-secondary" />
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                disabled
-                                title="No permission"
-                              >
-                                <Lock className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                            )}
-                            {/* Role edit dropdown for partner admins */}
-                            {canManageUsers &&
-                              (user?.role === "admin_partner" ||
-                                user?.role === "super_admin") && (
-                                <Select
-                                  value={u.role}
-                                  onValueChange={(val) =>
-                                    updateUserRole(u._id, val)
-                                  }
-                                >
-                                  <SelectTrigger className="w-40">
-                                    <SelectValue placeholder={u.role} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="viewer">
-                                      Viewer
-                                    </SelectItem>
-                                    <SelectItem value="campaign_manager">
-                                      Campaign Manager
-                                    </SelectItem>
-                                    <SelectItem value="accountant">
-                                      Accountant
-                                    </SelectItem>
-                                    <SelectItem value="merchant_admin">
-                                      Merchant Admin
-                                    </SelectItem>
-                                    <SelectItem value="media_partner">
-                                      Media Partner
-                                    </SelectItem>
-                                    <SelectItem value="admin_partner">
-                                      Admin Partner
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </TabsContent>
-                </Tabs>
+                          ))
+                        )}
+                      </TabsContent>
 
-                <Separator />
-                <p className="text-sm text-muted-foreground text-center py-2">
-                  {filteredUsers.length} total users for this partner
-                </p>
+                      <TabsContent value="inactive" className="space-y-3 mt-4">
+                        {inactiveUsers.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-8">
+                            No inactive users
+                          </p>
+                        ) : (
+                          inactiveUsers.map((u) => (
+                            <div
+                              key={u._id}
+                              className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-lg transition-colors group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Avatar>
+                                  <AvatarFallback
+                                    className={`${getAvatarColor(u.name)} text-white`}
+                                  >
+                                    {getInitials(u.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {u.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground capitalize">
+                                    {u.role.replace(/_/g, " ")}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleViewUser(u as ViewUser)}
+                                  className="hover:bg-primary/10 hover:text-primary"
+                                >
+                                  <Eye className="h-4 w-4 text-primary group-hover:text-primary" />
+                                </Button>
+                                {canManageUsers ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      handleToggleActivation(u._id, true)
+                                    }
+                                    className="hover:bg-secondary/10 hover:text-secondary"
+                                  >
+                                    <UserCheck className="h-4 w-4 text-secondary group-hover:text-secondary" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled
+                                    title="No permission"
+                                  >
+                                    <Lock className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                )}
+                                {/* Role edit dropdown for partner admins */}
+                                {canManageUsers &&
+                                  (user?.role === "admin_partner" ||
+                                    user?.role === "super_admin") && (
+                                    <Select
+                                      value={u.role}
+                                      onValueChange={(val) =>
+                                        updateUserRole(u._id, val)
+                                      }
+                                    >
+                                      <SelectTrigger className="w-40">
+                                        <SelectValue placeholder={u.role} />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="viewer">
+                                          Viewer
+                                        </SelectItem>
+                                        <SelectItem value="campaign_manager">
+                                          Campaign Manager
+                                        </SelectItem>
+                                        <SelectItem value="accountant">
+                                          Accountant
+                                        </SelectItem>
+                                        <SelectItem value="merchant_admin">
+                                          Merchant Admin
+                                        </SelectItem>
+                                        <SelectItem value="media_partner">
+                                          Media Partner
+                                        </SelectItem>
+                                        <SelectItem value="admin_partner">
+                                          Admin Partner
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </TabsContent>
+                    </Tabs>
+
+                    <Separator />
+                    <p className="text-sm text-muted-foreground text-center py-2">
+                      {filteredUsers.length} total users for this partner
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

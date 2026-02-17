@@ -7,9 +7,7 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
-import campaignsData from "../../auth/data/campaigns.json";
-import transactionsData from "../../auth/data/transactions.json";
-import walletsData from "../../auth/data/wallets.json";
+import { supabase } from "../../lib/supabase";
 
 export default function SmallCardsGrid() {
   const { partner } = useAuth();
@@ -23,53 +21,75 @@ export default function SmallCardsGrid() {
   const [balanceChange, setBalanceChange] = useState<number>(0);
 
   useEffect(() => {
-    try {
-      // Total campaigns for this partner
-      const campaigns = campaignsData.campaigns.filter(
-        (c) => !partnerId || c.partner_id === partnerId
-      );
-      const totalCount = campaigns.length;
+    const loadStats = async () => {
+      try {
+        if (!partnerId) {
+          setTotalCampaigns(0);
+          setOngoingCampaigns(0);
+          setEngagements(0);
+          setPurchases(0);
+          setWalletBalance(0);
+          setBalanceChange(0);
+          return;
+        }
 
-      // Ongoing campaigns (status = 'active')
-      const ongoingCount = campaigns.filter(
-        (c) => c.status === "active"
-      ).length;
+        // Fetch campaigns for this partner
+        const { data: campaigns, error: campaignsError } = await supabase
+          .from("campaigns")
+          .select("id, status")
+          .eq("partner_id", partnerId);
 
-      // Engagements and Purchases from transactions
-      const txs = transactionsData.transactions.filter(
-        (t) => !partnerId || t.partner_id === partnerId
-      );
-      const txCount = txs.length;
-      const purchaseCount = txs.filter(
-        (t) => t.transaction_type === "purchase"
-      ).length;
+        if (campaignsError) throw campaignsError;
 
-      // Wallet balance
-      const wallet = walletsData.wallets.find(
-        (w) => !partnerId || w.partner_id === partnerId
-      );
-      const currentBalance = wallet?.balance || 0;
-      const totalEarned = wallet?.total_earned || 0;
+        const totalCount = campaigns?.length || 0;
+        const ongoingCount =
+          campaigns?.filter((c) => c.status === "active").length || 0;
 
-      // Calculate change as percentage
-      const changePercent =
-        totalEarned > 0 ? (currentBalance / totalEarned) * 100 - 100 : 0;
+        // Fetch transactions for this partner
+        const { data: transactions, error: transError } = await supabase
+          .from("transactions")
+          .select("id, transaction_type")
+          .eq("partner_id", partnerId);
 
-      setTotalCampaigns(totalCount);
-      setOngoingCampaigns(ongoingCount);
-      setEngagements(txCount);
-      setPurchases(purchaseCount);
-      setWalletBalance(currentBalance);
-      setBalanceChange(Math.round(changePercent));
-    } catch (err) {
-      console.error("SmallCardsGrid: error loading stats", err);
-      setTotalCampaigns(0);
-      setOngoingCampaigns(0);
-      setEngagements(0);
-      setPurchases(0);
-      setWalletBalance(0);
-      setBalanceChange(0);
-    }
+        if (transError) throw transError;
+
+        const txCount = transactions?.length || 0;
+        const purchaseCount =
+          transactions?.filter((t) => t.transaction_type === "purchase")
+            .length || 0;
+
+        // Fetch wallet for this partner
+        const { data: wallet, error: walletError } = await supabase
+          .from("wallets")
+          .select("balance, total_earned")
+          .eq("partner_id", partnerId)
+          .single();
+
+        if (walletError && walletError.code !== "PGRST116") throw walletError;
+
+        const currentBalance = wallet?.balance || 0;
+        const totalEarned = wallet?.total_earned || 0;
+        const changePercent =
+          totalEarned > 0 ? (currentBalance / totalEarned) * 100 - 100 : 0;
+
+        setTotalCampaigns(totalCount);
+        setOngoingCampaigns(ongoingCount);
+        setEngagements(txCount);
+        setPurchases(purchaseCount);
+        setWalletBalance(currentBalance);
+        setBalanceChange(Math.round(changePercent));
+      } catch (err) {
+        console.error("SmallCardsGrid: error loading stats", err);
+        setTotalCampaigns(0);
+        setOngoingCampaigns(0);
+        setEngagements(0);
+        setPurchases(0);
+        setWalletBalance(0);
+        setBalanceChange(0);
+      }
+    };
+
+    loadStats();
   }, [partnerId]);
 
   return (

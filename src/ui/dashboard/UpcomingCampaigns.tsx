@@ -1,44 +1,57 @@
 import React, { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
-import campaignsData from "../../auth/data/campaigns.json";
+import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function UpcomingCampaigns() {
+  const { partner } = useAuth();
   const [items, setItems] = useState<
     { name: string; date: string; variant?: string }[]
   >([]);
 
   useEffect(() => {
-    try {
-      const today = new Date().toISOString().split("T")[0];
+    const loadCampaigns = async () => {
+      try {
+        const partnerId = (partner as any)?.id || (partner as any)?._id;
+        if (!partnerId) {
+          setItems([]);
+          return;
+        }
 
-      // Filter and sort upcoming campaigns using duration_start
-      const upcomingCampaigns = campaignsData.campaigns
-        .filter((c) => c.duration_start >= today)
-        .sort(
-          (a, b) =>
-            new Date(a.duration_start).getTime() -
-            new Date(b.duration_start).getTime()
-        )
-        .slice(0, 5);
+        const today = new Date().toISOString().split("T")[0];
 
-      setItems(
-        upcomingCampaigns.map((c) => ({
-          name: c.name || "Untitled",
-          date: c.duration_start
-            ? new Date(c.duration_start).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })
-            : "TBD",
-          variant: "default",
-        }))
-      );
-    } catch (err) {
-      console.error("UpcomingCampaigns: error loading campaigns", err);
-      setItems([]);
-    }
-  }, []);
+        // Fetch upcoming campaigns from Supabase
+        const { data: campaigns, error } = await supabase
+          .from("campaigns")
+          .select("id, name, duration_start")
+          .eq("partner_id", partnerId)
+          .gte("duration_start", today)
+          .order("duration_start", { ascending: true })
+          .limit(5);
+
+        if (error) throw error;
+
+        setItems(
+          (campaigns || []).map((c: any) => ({
+            name: c.name || "Untitled",
+            date: c.duration_start
+              ? new Date(c.duration_start).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "TBD",
+            variant: "default",
+          })),
+        );
+      } catch (err) {
+        console.error("UpcomingCampaigns: error loading campaigns", err);
+        setItems([]);
+      }
+    };
+
+    loadCampaigns();
+  }, [partner]);
 
   return (
     <div

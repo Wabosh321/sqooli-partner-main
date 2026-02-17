@@ -1,5 +1,4 @@
 import { useAuth } from "./useAuth";
-import { getJsonAuthUser } from "../auth/handleJsonAuth";
 
 export interface PermissionContext {
   permissions: Array<{
@@ -18,35 +17,18 @@ export interface PermissionContext {
 export function usePermissions(): PermissionContext {
   const { user, loading } = useAuth();
 
-  // Get permissions from JSON user
-  const getPermissionsFromJson = () => {
-    const jsonUser = getJsonAuthUser();
-    if (!jsonUser) return [];
-    return jsonUser.permissions || [];
-  };
-
-  const permissions = getPermissionsFromJson();
-  const jsonUser = getJsonAuthUser();
-  const userRole = jsonUser?.role || null;
+  const permissions: Array<{ category: string; level: string }> = [];
+  const userRole = user?.role || null;
 
   const hasCategory = (category: string): boolean => {
-    if (!permissions || permissions.length === 0) return false;
-
-    // Check for full access
-    const hasFullAccess = permissions.some(
-      (p) => p.category === "all_access" || p.level === "full"
-    );
-    if (hasFullAccess) return true;
-
-    // Check specific category
+    if (user?.role === "super_admin") return true;
     return permissions.some(
       (p) =>
-        p.category === category && (p.level === "full" || p.level === "view")
+        p.category === category && (p.level === "full" || p.level === "view"),
     );
   };
 
   const hasPermission = (permission: string): boolean => {
-    // Support both "category" and "category.action" formats
     const [category] = permission.split(".");
     return hasCategory(category);
   };
@@ -56,17 +38,9 @@ export function usePermissions(): PermissionContext {
   };
 
   const canWrite = (category: string): boolean => {
-    if (!permissions || permissions.length === 0) return false;
-
-    // Check for full access
-    const hasFullAccess = permissions.some(
-      (p) => p.category === "all_access" || p.level === "full"
-    );
-    if (hasFullAccess) return true;
-
-    // Check specific category for write permission (full level only)
+    if (user?.role === "super_admin") return true;
     return permissions.some(
-      (p) => p.category === category && p.level === "full"
+      (p) => p.category === category && p.level === "full",
     );
   };
 

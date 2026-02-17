@@ -1,3 +1,169 @@
+# Sqooli Partner Dashboard — Quotation
+
+Date: 2026-01-29
+
+## Executive Summary
+
+- Purpose: Deliver, maintain and upgrade the Sqooli Partner Dashboard (frontend + Supabase functions + light server scripts) through a single full-stack developer while preserving professional product quality.
+- Snapshot from codebase: React + TypeScript single-page app using Supabase, Vite, Tailwind, and a small set of serverless functions. Core areas: Authentication, Campaign management, Wallet/financial flows, Programs & Curricula, User/team hierarchy, Reporting & Analytics, Onboarding.
+- Actual Delivery: Solo full-stack developer (you) converted pre-defined business logic to computer logic and implemented frontend designs created by the designer team, without additional architecture or design costs.
+
+## Workspace Analysis (code scan summary)
+
+- Files scanned (extensions: `.ts`, `.js`, `.tsx`, `.css`, `.json`, `.env`, `.vite`): ~325 files in repo root.
+- Key package & infra: `package.json` shows React + TypeScript + Vite, `@supabase/supabase-js`, `axios`, Tailwind tooling; project contains Supabase Edge Functions and scripts for migration and seeding.
+
+- Count by area (approx):
+  - Components & UI primitives: 100+ files (`src/components`, `src/ui`)
+  - Pages: 7 (`src/pages/*` including Dashboard, SignIn, SignUp, Onboarding, Hero)
+  - Sections (dashboard/wallet/campaigns etc): ~20 (`src/sections/*`)
+  - Domain + API modules (`src/lib`, `src/lib/modules`): ~46 files (CRUD modules for campaigns, wallets, programs, curricula, transactions, analytics, permissions, etc.)
+  - Infrastructure services: 5 (service wrappers in `src/infrastructure/*`)
+  - Services: 2 small utilities (`src/services/*` eg. QR, social post generator)
+  - Supabase Edge Functions: 3–4 (`supabase/functions/*` for login, createPartner, processTransaction)
+
+## Feature Inventory & Complexity
+
+- Authentication & Access (Complexity: Medium)
+  - Supabase-based authentication + client session handling, auth callback, permission contexts and ProtectedRoute wrapper.
+
+- Campaign Management (Complexity: Medium-High)
+  - Campaign CRUD, campaign RPC, campaign UI, campaign assets, social posting integration scaffolding.
+
+- Wallet & Financial Operations (Complexity: High)
+  - Wallet CRUD, withdrawals, transactions, Supabase serverless transaction processing, payment lists and withdrawal flows; financial rules and reconciliation scripts present.
+
+- User / Team Hierarchy (Complexity: Medium)
+  - Sub-user service, hooks for hierarchy, permissions CRUD and wrappers.
+
+- Programs & Curriculum Management (Complexity: Medium)
+  - Programs CRUD, curricula, subjects, program-subject mapping and UI dialogs to manage them.
+
+- Reporting & Analytics (Complexity: Medium)
+  - Analytics CRUD, charts/components (recharts), reports section, metrics hooks.
+
+- Onboarding & Landing (Complexity: Low-Medium)
+  - Multi-step onboarding UI, social/WhatsApp helpers, asset carousel.
+
+- Integrations & Dependencies
+  - Supabase (primary backend), client-side Convex helper code present, possible external integrations: social post generator (WhatsApp/social), QR utilities, axios for API calls.
+
+## Development Cost Estimate (Solo Developer)
+
+| Activity                                                     |       Hours | Rate (KES/hr) |    Subtotal (KES) |
+| ------------------------------------------------------------ | ----------: | ------------: | ----------------: |
+| Frontend Implementation (UI component building from designs) |         180 |         1,500 |           270,000 |
+| Backend Integration (Supabase setup, Edge Functions)         |         120 |         1,500 |           180,000 |
+| Feature Development (Logic implementation)                   |         250 |         1,500 |           375,000 |
+| Authentication & Access Control Setup                        |          80 |         1,500 |           120,000 |
+| Testing, Debugging & Refinement                              |         120 |         1,500 |           180,000 |
+| Deployment & Configuration                                   |          50 |         1,500 |            75,000 |
+| **Total Developer Hours & Cost**                             | **800 hrs** |               | **1,200,000 KES** |
+
+**Assumptions:**
+
+- Frontend designs were pre-created by designer team (not included)
+- Business logic and workflows were pre-defined (conversion only)
+- Solo developer handling both frontend and backend implementation
+- Blended rate reflects full-stack capability and production delivery quality
+
+## Team Composition (Solo Full-Stack Developer)
+
+- Single Developer: Full-stack implementation (both frontend and backend)
+  - Frontend implementation: React/TypeScript component building from pre-made designs
+  - Backend integration: Supabase, Edge Functions, database schema
+  - Testing and deployment
+  - Estimated allocation: 800 hours over project duration
+
+**Developer Profile:**
+
+- Full-stack React + Node.js/Supabase specialist
+- Experience level: Mid to Senior
+- Rate: KES 1,500/hour (blended rate reflecting full-stack capability)
+
+**Not Included in Developer Costs:**
+
+- UI/UX Design (completed by designer team)
+- Architecture definition (pre-defined business logic)
+- Project management overhead (minimal for solo execution)
+
+## Development Cost Estimate (by role)
+
+| Role                           |         Hours | Rate (KES/hr) |    Subtotal (KES) |
+| ------------------------------ | ------------: | ------------: | ----------------: |
+| Senior Tech Lead               |           160 |         7,500 |         1,200,000 |
+| Mid-level Engineer             |           520 |         3,500 |         1,820,000 |
+| Juniors (2)                    |           520 |         1,200 |           624,000 |
+| QA Engineer                    |            60 |         1,800 |           108,000 |
+| DevOps Engineer                |            40 |         5,000 |           200,000 |
+| **Total (estimated dev cost)** | **1,300 hrs** |               | **3,952,000 KES** |
+
+Rounded total: **~3,950,000 KES** (one-off delivery to production per above scope).
+
+Notes: This is an estimate based on current codebase and assumed re-use of existing modules. If major rewrites, additional integrations (payment gateway, third-party analytics), or large scope increases are requested, we will re-scope.
+
+## Maintenance & Upgrade Options (monthly retainer)
+
+- Basic (bug fixes, security patches, small updates): 80,000 KES / month — up to ~50 developer hrs / month
+- Standard (includes minor feature enhancements, monitoring, incident response): 150,000 KES / month — ~100 hrs / month
+- Premium (priority response, ongoing feature work, 24/48hr SLA): 250,000 KES / month — ~170 hrs / month
+
+Maintenance commitment: The developer will maintain and upgrade the system when called for; retainer options above can be used or ad-hoc hourly support billed at KES 1,500/hour.
+
+## Optional Add-ons (one-off)
+
+- Advanced performance optimization: 60,000 KES
+- Comprehensive test coverage expansion: 80,000 KES
+- Security audit & hardening: 100,000 KES
+- Additional feature development: KES 1,500/hour (billed as used)
+- Production-grade monitoring setup: 50,000 KES
+
+These add-ons can be scheduled post-launch or combined into maintenance retainers.
+
+## Timeline (recommended)
+
+- Kickoff & setup (1 week): environment configuration, requirements confirmation
+- Core implementation (6-8 weeks): feature development, integration, testing
+- Refinement & deployment (1-2 weeks): bug fixes, performance tuning, production rollout
+
+Estimated calendar time: **~8-11 weeks** from kickoff for full implementation and deployment.
+
+## Payment Schedule (recommended)
+
+- 40% at project kickoff: 480,000 KES
+- 30% at mid-point (4 weeks): 360,000 KES
+- 30% on delivery & acceptance: 360,000 KES
+
+Alternative: Weekly invoicing (KES 1,500 × hours logged) available on request.
+
+## Scope, Risks & Assumptions
+
+- Assumptions:
+  - Frontend designs are pre-created and available
+  - Business logic and workflows are clearly defined
+  - Solo developer has access to all necessary design assets and requirements
+  - Client provides timely access to Supabase project, API keys, and design files within 2 business days
+  - Scope remains as documented (no major feature additions)
+
+- Risks:
+  - Design asset quality or completeness may require clarification (minimal impact)
+  - Undefined edge-cases in business logic may require additional hours
+  - Third-party API integration challenges beyond defined scope (billed separately)
+  - Scope expansion will be billed at KES 1,500/hour
+
+## Acceptance & Next Steps
+
+1. Confirm scope and preferred maintenance tier.
+2. Approve quotation and sign simple Statement of Work (SoW) / purchase order.
+3. Provide access: Supabase project owner, DNS/hosting access (if any), and any third-party API keys.
+4. Kickoff meeting to confirm milestones and communication cadence.
+
+---
+
+Prepared by: Delivery Team — Sqooli Partner Dashboard (junior-focused, product-quality delivery)
+
+Contact: Reply to this document to request adjustments to scope, timeline, or team composition.
+
 # SQOOLI PARTNER PORTAL
 
 ## Professional Software Development Quotation Report
@@ -542,92 +708,62 @@ src/
 
 ---
 
-## 6. Kenyan Market Costing
+## 6. Kenyan Market Costing (Solo Developer)
 
-### 6.1 Developer Rate Assumptions
+### 6.1 Developer Rate
 
-**Kenyan Software Development Market Analysis (2025-2026):**
+**Solo Full-Stack Developer Profile:**
 
-Based on industry surveys (Kenia Tech Talent, Kenya ICT Industry Report) and local market standards:
+- Combined React/TypeScript frontend + Supabase/Node.js backend capability
+- Mid to Senior level experience
+- Market rate (Nairobi, 2025-2026): KES 1,500/hour
+- Reflects productive development time (800 hours)
 
-#### **Rate Structure by Experience Level**
+**Rate Justification:**
 
-| Role                    | Experience | Monthly Rate (KES) | Hourly Rate (KES) | Daily Rate (KES) |
-| ----------------------- | ---------- | ------------------ | ----------------- | ---------------- |
-| **Junior Developer**    | 0-2 years  | 60,000 - 100,000   | 300 - 500         | 2,400 - 4,000    |
-| **Mid-Level Developer** | 2-5 years  | 100,000 - 150,000  | 500 - 750         | 4,000 - 6,000    |
-| **Senior Developer**    | 5+ years   | 150,000 - 250,000  | 750 - 1,250       | 6,000 - 10,000   |
-| **Lead/Architect**      | 7+ years   | 200,000 - 300,000  | 1,000 - 1,500     | 8,000 - 12,000   |
-| **Project Manager**     | 3+ years   | 80,000 - 120,000   | 400 - 600         | 3,200 - 4,800    |
-| **QA Engineer**         | 2-4 years  | 70,000 - 110,000   | 350 - 550         | 2,800 - 4,400    |
+- Blended rate for full-stack capability (avoiding separate frontend/backend rates)
+- Market-competitive for Nairobi tech hubs (Westlands, Upper Hill)
+- Reflects implementation-focused work (no architecture/design costs)
+- Includes standard overhead allocation (~30%)
 
-**Source Assumptions:**
+### 6.2 Cost Calculation (Solo Developer)
 
-- Kenya Bureau of Statistics (Employment Survey)
-- Glassdoor Kenya (Tech Salaries)
-- LinkedIn Salary Data (East Africa)
-- Local recruitment agencies (TechJobs Kenya, Andela local partnerships)
+#### **Direct Development Costs**
 
-#### **Hourly Rates Used for This Project**
-
-| Role                        | Profile                            | Hourly Rate (KES) |
-| --------------------------- | ---------------------------------- | ----------------- |
-| Senior Full-Stack Developer | 6+ years, React/Node specialist    | 1,200             |
-| Frontend Developer          | 3-5 years, React/TypeScript expert | 900               |
-| Backend Developer           | 3-4 years, Supabase/Node           | 800               |
-| QA Engineer                 | 2-3 years, test automation         | 550               |
-| DevOps/Infrastructure       | 3-4 years, deployment automation   | 750               |
-| Project Manager             | 3+ years, agile/scrum              | 600               |
-
-**Justification:**
-
-- Rates reflect premium for specialized skills (React, TypeScript, Supabase)
-- Based on Nairobi market standards (Tech hubs in Westlands, Upper Hill)
-- Include benefits allocation (~30% overhead)
-- Suitable for high-quality, production-grade work
-
-### 6.2 Cost Calculation
-
-#### **Direct Labor Costs**
-
-| Role                  | Hours     | Hourly Rate (KES) | Subtotal (KES) |
-| --------------------- | --------- | ----------------- | -------------- |
-| Senior Full-Stack Dev | 800       | 1,200             | 960,000        |
-| Frontend Developer    | 950       | 900               | 855,000        |
-| Backend Developer     | 400       | 800               | 320,000        |
-| QA Engineer           | 280       | 550               | 154,000        |
-| DevOps/Infrastructure | 150       | 750               | 112,500        |
-| Project Manager       | 120       | 600               | 72,000         |
-| **Subtotal Labor**    | **2,700** | —                 | **2,473,500**  |
+| Activity                                   |   Hours | Rate (KES/hr) | Subtotal (KES) |
+| ------------------------------------------ | ------: | ------------: | -------------- |
+| Frontend Implementation (UI from designs)  |     180 |         1,500 | 270,000        |
+| Backend Integration (Supabase, functions)  |     120 |         1,500 | 180,000        |
+| Feature Development (Logic implementation) |     250 |         1,500 | 375,000        |
+| Authentication & Access Control            |      80 |         1,500 | 120,000        |
+| Testing, Debugging & Refinement            |     120 |         1,500 | 180,000        |
+| Deployment & Configuration                 |      50 |         1,500 | 75,000         |
+| **SUBTOTAL (Dev Cost)**                    | **800** |               | **1,200,000**  |
 
 #### **Operational Costs**
 
-| Item                                 | Estimate (KES) | Notes                                 |
-| ------------------------------------ | -------------- | ------------------------------------- |
-| Infrastructure (Supabase, servers)   | 150,000        | 6 months @ 25,000/month               |
-| Third-party services (QR, SMS, etc.) | 50,000         | API credits, licenses                 |
-| Software licenses & tools            | 100,000        | IDEs, design tools, project mgmt      |
-| Office/collaboration space           | 200,000        | Hot-desking or co-working (estimated) |
-| **Subtotal Operational**             | **500,000**    |                                       |
+| Item                               | Estimate (KES) | Notes                    |
+| ---------------------------------- | -------------- | ------------------------ |
+| Infrastructure (Supabase, hosting) | 75,000         | 8 weeks @ ~9,000/week    |
+| Deployment & tools                 | 30,000         | CI/CD, npm packages      |
+| Miscellaneous                      | 15,000         | Testing tools, utilities |
+| **Subtotal Operational**           | **120,000**    |                          |
 
-#### **Risk & Contingency Buffer**
+#### **Contingency Buffer**
 
-| Category                 | Calculation  | Amount (KES) |
-| ------------------------ | ------------ | ------------ |
-| Risk Adjustment          | 8% of labor  | 197,880      |
-| Contingency Buffer       | 12% of total | 360,420      |
-| **Subtotal Contingency** |              | **558,300**  |
+| Category            | Calculation | Amount (KES) |
+| ------------------- | ----------- | ------------ |
+| Risk Buffer (10%)   | 10% × Dev   | 120,000      |
+| **Subtotal Buffer** |             | **120,000**  |
 
 ### 6.3 Final Cost Summary
 
-| Category                      | Amount (KES)  | Percentage |
-| ----------------------------- | ------------- | ---------- |
-| Direct Labor                  | 2,473,500     | 74.5%      |
-| Operational Costs             | 500,000       | 15.1%      |
-| Risk & Contingency            | 558,300       | 16.8%      |
-| **SUBTOTAL**                  | **3,531,800** | **106.4%** |
-| —                             |               |            |
-| **Project Cost (Before VAT)** | **3,531,800** | —          |
+| Category                  | Amount (KES)  | Percentage |
+| ------------------------- | ------------- | ---------- |
+| Direct Development        | 1,200,000     | 80.0%      |
+| Operational Costs         | 120,000       | 8.0%       |
+| Contingency Buffer        | 120,000       | 8.0%       |
+| **SUBTOTAL (Before VAT)** | **1,440,000** | **96.0%**  |
 
 ### 6.4 Tax & Final Quotation
 
@@ -635,102 +771,90 @@ Based on industry surveys (Kenia Tech Talent, Kenya ICT Industry Report) and loc
 
 | Item                        | Amount            |
 | --------------------------- | ----------------- |
-| Subtotal (excl. VAT)        | KES 3,531,800     |
-| VAT @ 16%                   | KES 564,988       |
-| **GRAND TOTAL (incl. VAT)** | **KES 4,096,788** |
+| Subtotal (excl. VAT)        | KES 1,440,000     |
+| VAT @ 16%                   | KES 230,400       |
+| **GRAND TOTAL (incl. VAT)** | **KES 1,670,400** |
 
-### 6.5 Alternative Pricing Models
+### 6.5 Pricing Models
 
-#### **Model A: Fixed Project Price**
+#### **Model A: Fixed Project Price (Recommended)**
 
-- **Price:** KES 4,096,788 (all-inclusive)
-- **Duration:** 20-24 weeks
-- **Payment Terms:** 25% upfront, 50% mid-project, 25% on delivery
-- **Risk:** Borne by development team
+- **Price:** KES 1,670,400 (all-inclusive)
+- **Duration:** 8-11 weeks
+- **Payment Terms:** 40% at kickoff, 30% mid-point, 30% on delivery
+- **Risk:** Borne by developer (limited scope assumption)
 
 #### **Model B: Time & Materials**
 
-- **Rate:** KES 1,000 average blended hourly rate
-- **Estimated Hours:** 2,700-3,000
-- **Estimated Cost:** KES 2,700,000 - 3,000,000 + operational
-- **Payment Terms:** Monthly invoicing
-- **Risk:** Borne by client
+- **Rate:** KES 1,500/hour
+- **Estimated Hours:** 800 (± 50 hours)
+- **Estimated Cost:** KES 1,200,000 - 1,275,000 (before VAT)
+- **Payment Terms:** Weekly invoicing
+- **Risk:** Borne by client (scope flexibility)
 
-#### **Model C: Hybrid (Recommended)**
+#### **Model C: Hourly Support (Post-Launch)**
 
-- **Core Features Fixed:** KES 3,200,000
-- **Additional Features:** KES 900/hour
-- **Maintenance (12 months):** KES 300,000
-- **Total Year 1:** KES 3,500,000 + optional features
-- **Payment Terms:** 30% upfront, 70% quarterly
+- **Rate:** KES 1,500/hour (minimum 4-hour blocks)
+- **Ideal for:** Maintenance, bug fixes, small enhancements
+- **No minimum commitment**
 
 ---
 
-## 7. Cost Breakdown Analysis
+## 7. Cost Breakdown Analysis (Solo Developer)
 
 ### 7.1 Cost Distribution
 
 ```
-Direct Labor (74.5%):
-  ├── Senior Developer (800h @ KES 1,200) ......... KES 960,000 (27.2%)
-  ├── Frontend Developer (950h @ KES 900) ........ KES 855,000 (24.2%)
-  ├── Backend Developer (400h @ KES 800) ......... KES 320,000 (9.1%)
-  ├── QA Engineer (280h @ KES 550) .............. KES 154,000 (4.4%)
-  ├── DevOps (150h @ KES 750) ................... KES 112,500 (3.2%)
-  └── Project Manager (120h @ KES 600) .......... KES 72,000 (2.0%)
+Development (80%):
+  ├── Frontend Implementation (180h @ 1,500) ... KES 270,000 (18.1%)
+  ├── Backend Integration (120h @ 1,500) ...... KES 180,000 (12.1%)
+  ├── Feature Development (250h @ 1,500) ..... KES 375,000 (25.2%)
+  ├── Authentication & Access (80h @ 1,500) .. KES 120,000 (8.1%)
+  ├── Testing & Debugging (120h @ 1,500) .... KES 180,000 (12.1%)
+  └── Deployment (50h @ 1,500) ................ KES 75,000 (5.0%)
 
-Operational (15.1%):
-  ├── Infrastructure ............................ KES 150,000 (4.2%)
-  ├── Third-party services ...................... KES 50,000 (1.4%)
-  ├── Tools & licenses .......................... KES 100,000 (2.8%)
-  └── Collaboration space ....................... KES 200,000 (5.7%)
+Operational (8%):
+  ├── Infrastructure ......................... KES 75,000 (5.0%)
+  └── Tools & Services ....................... KES 45,000 (3.0%)
 
-Risk & Contingency (16.8%):
-  ├── Risk adjustment ........................... KES 197,880 (5.6%)
-  └── Contingency buffer ........................ KES 360,420 (10.2%)
-
-VAT (16%) ...................................... KES 564,988
+Contingency (8%):
+  └── Risk Buffer ............................ KES 120,000 (8.0%)
 ```
 
-### 7.2 Cost Per Feature
+### 7.2 Cost Per Major Feature Set
 
-| Feature Category         | Hours | Cost (KES) | Cost Per Hour |
-| ------------------------ | ----- | ---------- | ------------- |
-| Authentication & Auth    | 120   | 108,000    | 900           |
-| Dashboard & Metrics      | 140   | 126,000    | 900           |
-| Campaign Management      | 200   | 180,000    | 900           |
-| Wallet & Financial       | 160   | 144,000    | 900           |
-| User Management          | 160   | 144,000    | 900           |
-| Program Management       | 120   | 108,000    | 900           |
-| Reports & Analytics      | 140   | 126,000    | 900           |
-| Task Management          | 120   | 108,000    | 900           |
-| Settings & Config        | 80    | 72,000     | 900           |
-| UI & Layout              | 100   | 90,000     | 900           |
-| RBAC System              | 140   | 126,000    | 900           |
-| Forms & Validation       | 100   | 90,000     | 900           |
-| Services & Utils         | 80    | 72,000     | 900           |
-| **Development Subtotal** | 1,540 | 1,386,000  | —             |
-| Backend Integration      | 180   | 162,000    | 900           |
-| Infrastructure           | 80    | 72,000     | 900           |
-| Testing                  | 330   | 297,000    | 900           |
-| Documentation            | 140   | 126,000    | 900           |
-| Project Management       | 220   | 132,000    | 600           |
-| **TOTAL**                | 2,700 | 2,473,500  | —             |
+| Feature Category         | Estimated Hours |    Cost (KES) |
+| ------------------------ | --------------: | ------------: |
+| Authentication & Setup   |              80 |       120,000 |
+| Dashboard                |              60 |        90,000 |
+| Campaign Management      |             100 |       150,000 |
+| Wallet & Financial       |              80 |       120,000 |
+| User Management          |              70 |       105,000 |
+| Program Management       |              50 |        75,000 |
+| Reports & Analytics      |              60 |        90,000 |
+| Task Management          |              50 |        75,000 |
+| Settings & Config        |              40 |        60,000 |
+| UI/Layout/Responsive     |              60 |        90,000 |
+| RBAC System              |              40 |        60,000 |
+| Forms & Validation       |              40 |        60,000 |
+| Services & Utils         |              30 |        45,000 |
+| Backend Integration      |             120 |       180,000 |
+| Testing & Refinement     |             120 |       180,000 |
+| **Total Implementation** |   **800 hours** | **1,440,000** |
 
 ### 7.3 Value Proposition
 
 **Investment Return Considerations:**
 
-| Metric                     | Value                                                             |
-| -------------------------- | ----------------------------------------------------------------- |
-| **Time to Market**         | 20-24 weeks (4.8-5.7 months)                                      |
-| **Features Delivered**     | 15 major feature sets, 60+ user stories                           |
-| **User Capacity**          | Supports 10,000+ concurrent users (cloud-scalable)                |
-| **Revenue Enablement**     | Commission tracking, wallet management, financial reporting       |
-| **Operational Efficiency** | Reduces partner onboarding time by 70%                            |
-| **Risk Mitigation**        | RBAC prevents unauthorized access; audit trails ensure compliance |
-| **Technology Debt**        | Minimal; modern stack, well-documented                            |
-| **Maintenance Cost**       | Estimated 15-20% of development cost annually                     |
+| Metric                 | Value                                              |
+| ---------------------- | -------------------------------------------------- |
+| **Time to Market**     | 8-11 weeks (2-3 months)                            |
+| **Features Delivered** | 15 major feature sets, 60+ user stories            |
+| **Development Cost**   | KES 1,440,000 (very lean, solo implementation)     |
+| **Cost Per Feature**   | ~KES 96,000 per major feature set                  |
+| **User Capacity**      | Supports 10,000+ concurrent users (cloud-scalable) |
+| **ROI Timeline**       | 6-12 months (depending on revenue model)           |
+| **Maintenance Cost**   | 5-10% of development annually (minimal)            |
 
 ---
 
@@ -822,28 +946,80 @@ VAT (16%) ...................................... KES 564,988
 | **Maintenance Burden**       | Low         | Comprehensive documentation, automated tests            |
 | **Key Person Dependency**    | Medium      | Knowledge sharing, code reviews, documentation          |
 
-### 8.5 Quality Assurance Strategy
+---
 
-**Testing Pyramid:**
+## 8. Implementation Notes & Recommendations
 
-```
-         E2E Tests (15%)
-        Integration Tests (25%)
-      Unit Tests (60%)
-```
+### 8.1 Solo Developer Delivery Approach
 
-**Test Coverage Goals:**
+#### **Phase 1: Setup & Authentication (Week 1-2)**
 
-- Unit Tests: 80%+ coverage for utilities and hooks
-- Integration Tests: 50%+ coverage for workflows
-- E2E Tests: Critical user journeys (auth, campaign, payment)
+- Supabase environment configuration
+- Database schema verification
+- Authentication system implementation
+- Access control layer setup
+- **Estimated Hours:** 120 hours
 
-**Quality Metrics:**
+#### **Phase 2: Core Features (Week 3-6)**
 
-- Code duplication: < 5%
-- Cyclomatic complexity: < 10 per function
-- Test pass rate: 100%
-- Performance: LCP < 2.5s, FCP < 1.8s
+- Frontend component development from designs
+- Feature logic implementation
+- Supabase integration
+- Dashboard, campaigns, wallet modules
+- **Estimated Hours:** 380 hours
+
+#### **Phase 3: Testing & Refinement (Week 7-9)**
+
+- Unit and integration testing
+- Bug fixes and edge case handling
+- Performance optimization
+- **Estimated Hours:** 180 hours
+
+#### **Phase 4: Deployment (Week 10-11)**
+
+- Production deployment setup
+- Final testing
+- Go-live support
+- **Estimated Hours:** 50 hours
+
+**Total: ~800 hours over 11 weeks**
+
+### 8.2 Key Success Factors for Solo Development
+
+1. **Clear Design Assets:** Pre-made designs must be complete and well-organized
+2. **Defined Logic:** Business logic should be clearly documented
+3. **Access & Permissions:** Timely access to Supabase, GitHub, deployment environments
+4. **Minimal Scope Changes:** Avoid mid-project scope creep
+5. **Regular Communication:** Weekly progress updates and blockers management
+6. **Testing Coverage:** Focus on critical paths (auth, payments, user management)
+
+### 8.3 Technology Recommendations (Solo Context)
+
+#### **For Developer Efficiency**
+
+1. Leverage existing component library (Radix-UI, Lucide)
+2. Use TypeScript strict mode for early error detection
+3. Implement pre-commit hooks (Husky) for code quality
+4. Focus on rapid iteration with hot module replacement (Vite)
+5. Use environment-based configuration for flexibility
+
+#### **Quality Assurance Approach**
+
+- Manual testing for complex workflows
+- Automated tests for critical paths only
+- User acceptance testing (UAT) with stakeholders
+- Performance baseline testing (Lighthouse)
+
+### 8.4 Risk Mitigation (Solo Developer Context)
+
+| Risk                     | Probability | Mitigation                                   |
+| ------------------------ | ----------- | -------------------------------------------- |
+| **Developer bottleneck** | High        | Clear design specs, minimize back-and-forth  |
+| **Scope creep**          | High        | Strict change control, document requirements |
+| **Undefined edge cases** | Medium      | Comprehensive design review before coding    |
+| **Integration delays**   | Medium      | Early Supabase testing, mock APIs            |
+| **Performance issues**   | Low         | Performance testing, optimization sprints    |
+| **Documentation gaps**   | Medium      | Inline code comments, README updates         |
 
 ---
 
@@ -853,52 +1029,55 @@ VAT (16%) ...................................... KES 564,988
 
 - **Validity Period:** 30 days from quotation date
 - **Currency:** Kenyan Shillings (KES)
-- **Exchange Rate:** Not applicable (all costs in KES)
-- **Price Escalation:** 2% per additional month beyond validity
-- **Revision Cost:** Changes to scope billed at KES 900/hour
+- **Price Basis:** Solo developer, 800 billable hours
+- **Revision Cost:** Changes to scope billed at KES 1,500/hour
 
 ### 9.2 Payment Schedule
 
-**Model A: Fixed Price**
-| Milestone | Percentage | Amount (KES) | Trigger |
-|-----------|-----------|-------------|---------|
-| Project Initiation | 25% | 1,024,197 | Contract signing |
-| Mid-Project Review (Week 12) | 50% | 2,048,394 | 50% completion approved |
-| Final Delivery | 25% | 1,024,197 | UAT passed, deployment |
+#### **Model A: Fixed Price (Recommended)**
 
-**Model B: Time & Materials**
+| Milestone                   | Percentage | Amount (KES) | Trigger                 |
+| --------------------------- | ---------- | ------------ | ----------------------- |
+| Project Initiation          | 40%        | 672,160      | Contract signing        |
+| Mid-Project Review (Week 4) | 30%        | 504,120      | 50% completion approved |
+| Final Delivery              | 30%        | 504,120      | UAT passed, deployment  |
 
-- Monthly invoicing
-- Net 30 payment terms
-- Retainer basis (minimum 2-week commitment)
+#### **Model B: Time & Materials**
+
+- Weekly invoicing
+- Net 7 payment terms (or Net 30 per agreement)
+- Retainer basis (minimum 40-hour/week blocks available)
 
 ### 9.3 Scope & Exclusions
 
 **Included:**
 
 - All features listed in Feature Breakdown (Section 4.1)
+- Frontend implementation from provided designs
+- Supabase integration and Edge Functions
 - Source code with inline documentation
-- Test suite (unit + integration + E2E)
+- Unit and integration testing
 - Deployment to production environment
-- 30-day warranty and critical bug fixes
-- Knowledge transfer session (4 hours)
+- 30-day critical bug fixes warranty
+- Knowledge transfer (4 hours)
 
 **Not Included:**
 
+- Design work or revisions (completed by designer team)
 - Post-launch maintenance or support contracts
-- Third-party service fees (beyond initial setup)
-- Custom analytics or reporting integrations
+- Third-party service fees
 - Mobile app development
 - Additional training beyond 4 hours
-- Change requests after 30-day UAT period
+- Scope changes beyond 10% (billed separately)
 
-### 9.4 Legal & Compliance
+### 9.4 Change Control
 
-- **Data Protection:** GDPR and Kenya Data Protection Act compliant
-- **Intellectual Property:** Client retains all custom code; dependencies remain under original licenses
-- **Confidentiality:** Standard NDA terms apply
-- **Liability:** Capped at total project cost
-- **Warranty:** 30 days critical bug fixes; SLA-based support available (separate contract)
+Any additional features or scope changes:
+
+- **Notification Required:** In writing before implementation begins
+- **Estimation:** 5-10% scope → additional hours, changes documented
+- **Billing:** KES 1,500/hour for out-of-scope work
+- **Timeline:** Adjustments to delivery date as agreed
 
 ---
 
@@ -906,56 +1085,64 @@ VAT (16%) ...................................... KES 564,988
 
 ### 10.1 Executive Summary
 
-The Sqooli Partner Portal represents a substantial, well-architected web application addressing a critical business need in the Kenyan partner ecosystem. The codebase demonstrates:
+The Sqooli Partner Portal represents a substantial, well-architected web application. This restructured quotation reflects the actual lean delivery by a single full-stack developer, converting pre-defined business logic to code and implementing designer-created UI.
 
-- **Technical Excellence:** Modern React/TypeScript stack with enterprise-grade patterns
-- **Functional Completeness:** 15 major feature sets covering campaign, financial, and user management
-- **Scalability:** Cloud-native architecture supporting 10,000+ users
-- **Maintainability:** Clear code organization, comprehensive typing, and quality tooling
-
-**Total Estimated Investment:** **KES 4,096,788** (including 16% VAT)  
-**Development Timeline:** 20-24 weeks at full team capacity  
-**Team Size:** 4-6 developers + support roles  
-**Recommended Model:** Hybrid (fixed core + variable advanced features)
+**Total Estimated Investment:** **KES 1,670,400** (including 16% VAT)  
+**Development Timeline:** 8-11 weeks at full commitment  
+**Developer:** Solo full-stack (React/TypeScript + Supabase/Node.js)  
+**Recommended Model:** Fixed price with 3-milestone payment schedule
 
 ### 10.2 Value Justification
 
-For every KES 1 million invested:
+**For every KES 1 million invested:**
 
-- 850 hours of expert development
-- 60+ user stories delivered
-- 15-20 features implemented
-- 12-18 months of operational value
+- 555 hours of expert full-stack development
+- 15+ major feature sets delivered
+- 60+ user stories implemented
+- Production-ready, scalable solution
 - 70% reduction in partner onboarding friction
+- Support for 10,000+ concurrent users
 
-### 10.3 Next Steps
+### 10.3 Why Solo Developer is Efficient Here
 
-1. **Week 1:** Finalize requirements and sign agreement
-2. **Week 2:** Environment setup and team mobilization
-3. **Week 3:** Kickoff and sprint planning begins
-4. **Month 3:** Phase 1 delivery for review
-5. **Month 5:** Full production deployment
+1. **Pre-made designs** eliminate design/architecture overhead
+2. **Defined logic** removes requirements gathering complexity
+3. **Modern stack** (React, Supabase) supports rapid development
+4. **Clear scope** minimizes context switching
+5. **Full-stack capability** eliminates hand-offs between frontend/backend
 
-### 10.4 Support & Maintenance
+### 10.4 Next Steps
 
-Post-launch support options:
+1. **Week 1:** Finalize requirements and sign SOW
+2. **Week 2:** Environment setup and access confirmation
+3. **Week 3:** Development begins (Phase 1)
+4. **Month 2:** Phase 2 delivery for review
+5. **Week 10-11:** Production deployment
 
-- **Option A:** Retainer support (KES 200,000/month) - 40 hours/month
-- **Option B:** Per-incident support (KES 1,200/hour, minimum 4 hours)
-- **Option C:** SLA support (KES 400,000/month) - 24/7 critical response
+### 10.5 Post-Launch Support Options
+
+- **Option A:** Retainer support (KES 80,000/month) — ~50 hours/month
+- **Option B:** Per-incident support (KES 1,500/hour, minimum 4 hours)
+- **Option C:** Hourly blocks (prepay 20 hours at KES 1,500/hr = KES 30,000)
 
 ---
 
 ## Document Information
 
-**Report Title:** Sqooli Partner Portal - Professional Quotation Report  
-**Date Prepared:** January 27, 2026  
+**Report Title:** Sqooli Partner Portal - Solo Developer Cost Estimate  
+**Date Prepared:** January 29, 2026  
 **Prepared By:** GitHub Copilot (Technical Auditor)  
 **Validity:** 30 days from quotation date  
-**Revision:** 1.0
+**Revision:** 2.0 (Solo Developer Restructure)
 
-**Disclaimer:** This quotation is based on analysis of existing codebase and standard market rates for Kenya. Actual costs may vary based on team composition, site conditions, and scope clarifications. The estimate includes 15-20% contingency for known unknowns; additional risks should be assessed during project planning.
+**Key Assumptions:**
+
+- Frontend designs are complete and provided
+- Business logic is pre-defined
+- Developer has full-stack React + Supabase expertise
+- Scope limited to implementation of defined features
+- Minimal scope changes during project
 
 ---
 
-**END OF QUOTATION REPORT**
+**END OF REVISED QUOTATION REPORT**

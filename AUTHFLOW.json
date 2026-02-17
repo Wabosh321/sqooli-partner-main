@@ -1,0 +1,383 @@
+{
+  "sign_up_flow": {
+    "tables": [
+      {
+        "table_name": "auth.users",
+        "columns": ["id", "email", "email_confirmed_at", "raw_user_meta_data"],
+        "purpose": "Supabase Auth user records"
+      },
+      {
+        "table_name": "profiles",
+        "columns": [
+          "id (FK→auth.users)",
+          "email",
+          "username",
+          "phone",
+          "full_name",
+          "role",
+          "is_first_login",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "purpose": "User profile linked to auth record"
+      },
+      {
+        "table_name": "partners",
+        "columns": [
+          "id",
+          "org_name",
+          "partner_type",
+          "access_level",
+          "onboarding_completed"
+        ],
+        "purpose": "Partner organization created during signup"
+      }
+    ],
+    "functions": [
+      {
+        "function_name": "create_user_profile(p_email, p_full_name, p_phone, p_username)",
+        "purpose": "Creates user profile after email verification; checks auth.uid() is not null"
+      },
+      {
+        "function_name": "create_user_profile(p_auth_id, p_email, p_full_name, p_phone, p_username)",
+        "purpose": "Creates profile with explicit auth_id; verifies auth.uid() matches p_auth_id"
+      },
+      {
+        "function_name": "sync_verified_user_profile()",
+        "purpose": "Trigger function (AFTER INSERT/UPDATE on auth.users); syncs verified auth records to profiles with email_confirmed_at IS NOT NULL"
+      },
+      {
+        "function_name": "rpc_onboard_partner_user(p_org_name, p_partner_type, p_user_email, p_user_password, p_full_name, p_role)",
+        "purpose": "Creates partner record and user profile; returns partner_id and user_id"
+      }
+    ],
+    "policies": [
+      {
+        "policy_name": "RPC can create confirmed user profiles",
+        "table": "profiles",
+        "commands": "INSERT",
+        "conditions": "with_check: ((auth.uid() IS NOT NULL) AND (auth.uid() = id))"
+      }
+    ],
+    "triggers": [
+      {
+        "trigger_name": "trg_sync_verified_user_profile_insert",
+        "table": "auth.users",
+        "event": "AFTER INSERT (WHEN new.email_confirmed_at IS NOT NULL)",
+        "function": "sync_verified_user_profile()"
+      },
+      {
+        "trigger_name": "trg_sync_verified_user_profile_update",
+        "table": "auth.users",
+        "event": "AFTER UPDATE (WHEN email_confirmed or raw_user_meta_data changed)",
+        "function": "sync_verified_user_profile()"
+      },
+      {
+        "trigger_name": "profiles_updated_at",
+        "table": "profiles",
+        "event": "BEFORE UPDATE",
+        "function": "handle_profiles_updated_at()"
+      }
+    ]
+  },
+  "sign_in_flow": {
+    "tables": [
+      {
+        "table_name": "auth.users",
+        "columns": ["id", "email", "email_confirmed_at"],
+        "purpose": "Source of authentication truth"
+      },
+      {
+        "table_name": "profiles",
+        "columns": [
+          "id",
+          "email",
+          "username",
+          "partner_id",
+          "role",
+          "is_active",
+          "is_first_login"
+        ],
+        "purpose": "User context and role information"
+      }
+    ],
+    "functions": [
+      {
+        "function_name": "is_authenticated()",
+        "purpose": "Returns TRUE if auth.uid() IS NOT NULL; used by RLS policies for auth checks"
+      },
+      {
+        "function_name": "get_user_partner_id(p_user_id)",
+        "purpose": "Retrieves partner_id from profiles for given user_id; used for multi-tenant context"
+      }
+    ],
+    "policies": [
+      {
+        "policy_name": "Users can view own profile",
+        "table": "profiles",
+        "commands": "SELECT",
+        "conditions": "using: ((auth.uid() = id) OR is_super_admin(auth.uid()))"
+      }
+    ]
+  },
+  "partner_roles_dashboard": {
+    "tables": [
+      {
+        "table_name": "partners",
+        "columns": [
+          "id",
+          "partner_type",
+          "access_level",
+          "onboarding_completed"
+        ],
+        "purpose": "Partner organization type and access level"
+      },
+      {
+        "table_name": "profiles",
+        "columns": [
+          "partner_id (FK→partners)",
+          "role",
+          "access_level",
+          "permissions (jsonb)",
+          "is_active"
+        ],
+        "purpose": "User role within partner org and global permissions"
+      },
+      {
+        "table_name": "team_members",
+        "columns": [
+          "partner_id (FK)",
+          "user_id (FK→profiles)",
+          "role",
+          "permission_level",
+          "is_active"
+        ],
+        "purpose": "Fine-grained role assignment per campaign/program"
+      },
+      {
+        "table_name": "audit_logs",
+        "columns": [
+          "user_id (FK→profiles)",
+          "action",
+          "action_type",
+          "resource_type",
+          "resource_id"
+        ],
+        "purpose": "Audit trail for access and actions"
+      }
+    ],
+    "functions": [
+      {
+        "function_name": "is_super_admin(p_user_id)",
+        "purpose": "Checks if user role is 'super_admin' or 'system_admin'; used by RLS policies"
+      },
+      {
+        "function_name": "is_partner_admin(p_partner_id)",
+        "purpose": "Checks if any user with partner_id has role containing 'admin' or is_super_admin; used by RLS policies"
+      },
+      {
+        "function_name": "rpc_create_team_member(p_partner_id, p_user_id, p_role, p_campaign_id, p_program_id, p_permission_level)",
+        "purpose": "Assigns user to campaign/program with role (creator, approver, member, viewer, admin) and permission_level (viewer, member, admin)"
+      },
+      {
+        "function_name": "rpc_update_team_member(p_team_member_id, p_role, p_permission_level, p_is_active)",
+        "purpose": "Updates team member role, permission_level, and active status"
+      },
+      {
+        "function_name": "log_activity(p_partner_id, p_user_id, p_action, p_entity_type, p_entity_id, p_before_state, p_after_state, p_change_summary)",
+        "purpose": "Logs user actions for audit trail"
+      }
+    ],
+    "policies": [
+      {
+        "policy_name": "Only super admins can create partners",
+        "table": "partners",
+        "commands": "INSERT",
+        "conditions": "with_check: is_super_admin(auth.uid())"
+      },
+      {
+        "policy_name": "Partner admins can update own partner",
+        "table": "partners",
+        "commands": "UPDATE",
+        "conditions": "using/with_check: complex admin check"
+      },
+      {
+        "policy_name": "Users can view own partner",
+        "table": "partners",
+        "commands": "SELECT",
+        "conditions": "using: ((id IN (SELECT profiles.partner_id FROM profiles WHERE profiles.id = auth.uid())) OR is_super_admin(auth.uid()))"
+      },
+      {
+        "policy_name": "Admins can view partner members",
+        "table": "profiles",
+        "commands": "SELECT",
+        "conditions": "using: admin membership check"
+      },
+      {
+        "policy_name": "Users can update own limited fields",
+        "table": "profiles",
+        "commands": "UPDATE",
+        "conditions": "using/with_check: (auth.uid() = id)"
+      },
+      {
+        "policy_name": "Users can view own profile",
+        "table": "profiles",
+        "commands": "SELECT",
+        "conditions": "using: ((auth.uid() = id) OR is_super_admin(auth.uid()))"
+      },
+      {
+        "policy_name": "Partner admins can create campaigns",
+        "table": "campaigns",
+        "commands": "INSERT",
+        "conditions": "with_check: is_partner_admin(partner_id)"
+      },
+      {
+        "policy_name": "Partner admins can delete campaigns",
+        "table": "campaigns",
+        "commands": "DELETE",
+        "conditions": "using: is_partner_admin(partner_id)"
+      },
+      {
+        "policy_name": "Partner admins can update campaigns",
+        "table": "campaigns",
+        "commands": "UPDATE",
+        "conditions": "using: is_partner_admin(partner_id); with_check: is_partner_admin(partner_id)"
+      },
+      {
+        "policy_name": "Users can view own partner campaigns",
+        "table": "campaigns",
+        "commands": "SELECT",
+        "conditions": "using: ((partner_id = get_user_partner_id(auth.uid())) OR is_super_admin(auth.uid()))"
+      },
+      {
+        "policy_name": "Partner admins can create programs",
+        "table": "programs",
+        "commands": "INSERT",
+        "conditions": "with_check: is_partner_admin(partner_id)"
+      },
+      {
+        "policy_name": "Partner admins can delete programs",
+        "table": "programs",
+        "commands": "DELETE",
+        "conditions": "using: is_partner_admin(partner_id)"
+      },
+      {
+        "policy_name": "Partner admins can update programs",
+        "table": "programs",
+        "commands": "UPDATE",
+        "conditions": "using/with_check: is_partner_admin(partner_id)"
+      },
+      {
+        "policy_name": "Users can view own partner programs",
+        "table": "programs",
+        "commands": "SELECT",
+        "conditions": "using: ((partner_id = get_user_partner_id(auth.uid())) OR is_super_admin(auth.uid()))"
+      },
+      {
+        "policy_name": "Authorized users can update tasks",
+        "table": "tasks",
+        "commands": "UPDATE",
+        "conditions": "using/with_check: ((created_by_user_id = auth.uid()) OR (approver_id = auth.uid()) OR is_super_admin(auth.uid()))"
+      },
+      {
+        "policy_name": "Partner admins can delete tasks",
+        "table": "tasks",
+        "commands": "DELETE",
+        "conditions": "using: partner-admin check on related campaign partner"
+      },
+      {
+        "policy_name": "Users can create tasks in accessible campaigns",
+        "table": "tasks",
+        "commands": "INSERT",
+        "conditions": "with_check: partner-admin check on campaign partner"
+      },
+      {
+        "policy_name": "Users can view accessible tasks",
+        "table": "tasks",
+        "commands": "SELECT",
+        "conditions": "using: created/approver/partner membership OR is_super_admin(auth.uid())"
+      },
+      {
+        "policy_name": "System can log user activity",
+        "table": "user_activity_log",
+        "commands": "INSERT",
+        "conditions": "with_check: is_super_admin(auth.uid())"
+      },
+      {
+        "policy_name": "Users can view own activity logs",
+        "table": "user_activity_log",
+        "commands": "SELECT",
+        "conditions": "using: ((user_id = auth.uid()) OR (parent_user_id = auth.uid()) OR is_super_admin(auth.uid()))"
+      },
+      {
+        "policy_name": "System can create performance metrics",
+        "table": "user_performance_metrics",
+        "commands": "INSERT",
+        "conditions": "with_check: is_super_admin(auth.uid())"
+      },
+      {
+        "policy_name": "System can update performance metrics",
+        "table": "user_performance_metrics",
+        "commands": "UPDATE",
+        "conditions": "using/with_check: is_super_admin(auth.uid())"
+      },
+      {
+        "policy_name": "Users can view own performance metrics",
+        "table": "user_performance_metrics",
+        "commands": "SELECT",
+        "conditions": "using: ((user_id = auth.uid()) OR (parent_user_id = auth.uid()) OR is_super_admin(auth.uid()))"
+      },
+      {
+        "policy_name": "Authenticated users can create audit logs",
+        "table": "audit_logs",
+        "commands": "INSERT",
+        "conditions": "with_check: (is_authenticated() AND ((user_id = auth.uid()) OR is_super_admin(auth.uid())))"
+      },
+      {
+        "policy_name": "Users can view own audit logs",
+        "table": "audit_logs",
+        "commands": "SELECT",
+        "conditions": "using: ((user_id = auth.uid()) OR is_super_admin(auth.uid()))"
+      }
+    ],
+    "triggers": [
+      {
+        "trigger_name": "partners_updated_at",
+        "table": "partners",
+        "event": "BEFORE UPDATE",
+        "function": "handle_partners_updated_at()"
+      },
+      {
+        "trigger_name": "profiles_updated_at",
+        "table": "profiles",
+        "event": "BEFORE UPDATE",
+        "function": "handle_profiles_updated_at()"
+      },
+      {
+        "trigger_name": "campaigns_updated_at",
+        "table": "campaigns",
+        "event": "BEFORE UPDATE",
+        "function": "handle_campaigns_updated_at()"
+      },
+      {
+        "trigger_name": "programs_updated_at",
+        "table": "programs",
+        "event": "BEFORE UPDATE",
+        "function": "handle_programs_updated_at()"
+      },
+      {
+        "trigger_name": "tasks_updated_at",
+        "table": "tasks",
+        "event": "BEFORE UPDATE",
+        "function": "handle_tasks_updated_at()"
+      },
+      {
+        "trigger_name": "user_performance_metrics_updated_at",
+        "table": "user_performance_metrics",
+        "event": "BEFORE UPDATE",
+        "function": "handle_user_performance_metrics_updated_at()"
+      }
+    ]
+  }
+}

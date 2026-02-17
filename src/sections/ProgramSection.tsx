@@ -1,8 +1,7 @@
 // app/programs/section.tsx
 "use client";
 
-import React from "react";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { usePartnerAccess } from "../hooks/usePartnerAccess";
@@ -49,9 +48,11 @@ import {
   getSectionContainerStyle,
 } from "./SettingsSection";
 import { useDeviceSize } from "../hooks/useDeviceSize";
-import programsData from "../auth/data/programs.json";
 
 import { toast } from "sonner";
+
+// PHASE 4: Supabase integration for programs
+import { ProgramService } from "../infrastructure/program/program.service";
 
 interface Program {
   id: string;
@@ -160,19 +161,62 @@ export default function ProgramsSection() {
 
   const itemsPerPage = 8;
 
-  const { user } = useAuth();
+  const { user, partner } = useAuth();
   const { canWrite, hasPermission } = usePermissions();
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [programsLoading, setProgramsLoading] = useState(true);
 
-  // Load programs from JSON data
-  React.useEffect(() => {
-    setPrograms(
-      programsData.programs.map((p) => ({
-        ...p,
-        _id: p.id,
-      })),
+  // PHASE 4: Load programs from Supabase and subscribe to real-time changes
+  useEffect(() => {
+    if (!partner?._id && !partner?.id) {
+      setProgramsLoading(false);
+      return;
+    }
+
+    const partnerId = partner._id || partner.id;
+
+    // Initial load from Supabase
+    const loadPrograms = async () => {
+      try {
+        setProgramsLoading(true);
+        const fetchedPrograms = await ProgramService.fetchPrograms(partnerId);
+
+        const mapped = (fetchedPrograms || []).map((p) => ({
+          ...p,
+          _id: p.id,
+        }));
+
+        setPrograms(mapped);
+      } catch (err) {
+        console.error("Error loading programs:", err);
+        toast.error("Failed to load programs");
+      } finally {
+        setProgramsLoading(false);
+      }
+    };
+
+    loadPrograms();
+
+    // PHASE 4: Subscribe to real-time program changes
+    const unsubscribe = ProgramService.subscribeToProgramChanges(
+      partnerId,
+      (updatedProgram) => {
+        setPrograms((prev) => {
+          const existing = prev.findIndex((p) => p.id === updatedProgram.id);
+          if (existing >= 0) {
+            const updated = [...prev];
+            updated[existing] = { ...updatedProgram, _id: updatedProgram.id };
+            return updated;
+          }
+          return [...prev, { ...updatedProgram, _id: updatedProgram.id }];
+        });
+      },
     );
-  }, []);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [user, partner]);
 
   const isSuperAdmin = isConvexUser(user) && user.role === "super_admin";
   const canCreatePrograms =
@@ -196,13 +240,37 @@ export default function ProgramsSection() {
     startIndex + itemsPerPage,
   );
 
-  if (programs === undefined) {
+  // PHASE 4: Delete program via RPC
+  const handleDeleteProgram = async (program: Program) => {
+    try {
+      const result = await ProgramService.deleteProgram(
+        program._id || program.id,
+      );
+
+      if (result.success) {
+        toast.success("Program deleted successfully");
+        setPrograms((prev) =>
+          prev.filter((p) => p._id !== program._id && p.id !== program.id),
+        );
+      } else {
+        toast.error(result.error || "Failed to delete program");
+      }
+    } catch (err) {
+      console.error("Error deleting program:", err);
+      toast.error("An error occurred while deleting the program");
+    }
+  };
+
+  if (programs === undefined || programsLoading) {
     return <Loading message="Loading programs..." size="lg" />;
   }
 
   return (
     <div style={getSectionContainerStyle(padding)}>
-      <div className="mx-auto space-y-6" style={{ width: "max(88.33vw, 1272px)", maxWidth: "100%" }}>
+      <div
+        className="mx-auto space-y-6"
+        style={{ width: "max(88.33vw, 1272px)", maxWidth: "100%" }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-foreground">Programs</h1>

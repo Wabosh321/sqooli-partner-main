@@ -22,7 +22,9 @@ import {
 import { useDeviceSize } from "../hooks/useDeviceSize";
 import { CampaignHeader, CampaignTable } from "../ui/campaign";
 import { Search, Menu, Plus, Lock, AlertCircle } from "lucide-react";
-import campaignsData from "../auth/data/campaigns.json";
+
+// PHASE 4: Supabase integration for campaigns
+import { CampaignService } from "../infrastructure/campaign/campaign.service";
 
 export default function CampaignSection() {
   const [activeTab, setActiveTab] = useState<"active" | "expired" | "draft">(
@@ -42,40 +44,81 @@ export default function CampaignSection() {
   const { canAccessCampaigns, partnerType } = usePartnerAccess();
   const { user, partner } = useAuth();
   const { canRead, canWrite, loading: permissionsLoading } = usePermissions();
-  const { campaigns: userCampaigns, loading: campaignsLoading } =
-    useUserCampaigns();
 
   const canViewCampaigns = canRead("campaigns");
   const canManageCampaigns = canWrite("campaigns");
 
+  // PHASE 4: State for Supabase campaigns
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(true);
 
+  // PHASE 4: Load campaigns from Supabase and subscribe to real-time changes
   useEffect(() => {
-    const allCampaigns = campaignsData.campaigns.map((c) => ({
-      ...c,
-      _id: c.id,
-    }));
-
-    // Filter campaigns based on user role and partner
-    const userRole = isConvexUser(user) ? user.role : "partner_member";
-    const partnerId = partner?._id || partner?.id;
-
-    let filtered = allCampaigns;
-
-    // If admin_partner, show all campaigns for their partner
-    // If partner_member, show campaigns created by them or approve/decline campaigns created by others
-    if (userRole === "admin_partner") {
-      filtered = allCampaigns.filter((c) => c.partner_id === partnerId);
-    } else if (userRole === "partner_member") {
-      // Can see campaigns created by themselves and campaigns waiting for approval
-      filtered = allCampaigns.filter(
-        (c) =>
-          c.partner_id === partnerId &&
-          (c.created_by_user_id === user?.id || c.status === "pending"),
-      );
+    if (!partner?._id && !partner?.id) {
+      setCampaignsLoading(false);
+      return;
     }
 
-    setCampaigns(filtered);
+    const partnerId = partner._id || partner.id;
+
+    // Initial load from Supabase
+    const loadCampaigns = async () => {
+      try {
+        setCampaignsLoading(true);
+        const fetchedCampaigns =
+          await CampaignService.fetchByPartner(partnerId);
+
+        // Map Supabase IDs to _id for compatibility
+        const mapped = (fetchedCampaigns || []).map((c) => ({
+          ...c,
+          _id: c.id,
+        }));
+
+        // Apply role-based filtering
+        const userRole = isConvexUser(user) ? user.role : "partner_member";
+        let filtered = mapped;
+
+        if (userRole === "admin_partner") {
+          filtered = mapped.filter((c) => c.partner_id === partnerId);
+        } else if (userRole === "partner_member") {
+          filtered = mapped.filter(
+            (c) =>
+              c.partner_id === partnerId &&
+              (c.created_by_user_id === user?.id || c.status === "pending"),
+          );
+        }
+
+        setCampaigns(filtered);
+      } catch (err) {
+        console.error("Error loading campaigns:", err);
+        toast.error("Failed to load campaigns");
+      } finally {
+        setCampaignsLoading(false);
+      }
+    };
+
+    loadCampaigns();
+
+    // PHASE 4: Subscribe to real-time campaign changes
+    const unsubscribe = CampaignService.subscribeToCampaignChanges(
+      partnerId,
+      (updatedCampaign) => {
+        // Update or add campaign in local state
+        setCampaigns((prev) => {
+          const existing = prev.findIndex((c) => c.id === updatedCampaign.id);
+          if (existing >= 0) {
+            const updated = [...prev];
+            updated[existing] = { ...updatedCampaign, _id: updatedCampaign.id };
+            return updated;
+          }
+          return [...prev, { ...updatedCampaign, _id: updatedCampaign.id }];
+        });
+      },
+    );
+
+    return () => {
+      unsubscribe();
+    };
   }, [user, partner]);
 
   const formatDate = (dateStr?: string) => {
@@ -105,13 +148,35 @@ export default function CampaignSection() {
     });
   }, [campaigns, activeTab, searchQuery]);
 
-  const handleDelete = (campaign: any) => {
+  const handleDelete = async (campaign: any) => {
     if (!canManageCampaigns) {
       toast.error("You don't have permission to delete campaigns");
       return;
     }
 
-    toast.error("Campaign management is not available in demo mode");
+    setLoading(true);
+    try {
+      // PHASE 4: Call RPC function to delete campaign
+      const result = await CampaignService.deleteCampaign(
+        campaign._id || campaign.id,
+      );
+
+      if (result.success) {
+        toast.success("Campaign deleted successfully");
+        // Remove from local state
+        setCampaigns((prev) =>
+          prev.filter((c) => c._id !== campaign._id && c.id !== campaign.id),
+        );
+        setShowConfirm(false);
+      } else {
+        toast.error(result.error || "Failed to delete campaign");
+      }
+    } catch (err) {
+      console.error("Error deleting campaign:", err);
+      toast.error("An error occurred while deleting the campaign");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Permission guard

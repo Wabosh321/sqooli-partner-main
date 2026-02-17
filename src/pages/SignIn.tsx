@@ -5,14 +5,12 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import { validateLoginData } from "../utils/handleLogin";
-import { handleJsonSignIn } from "../auth/handleJsonAuth";
+import { handleLogin } from "../utils/handleLogin";
 import type { LoginFormData, LoginValidationErrors } from "../types/auth.types";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useDeviceSize } from "../hooks/useDeviceSize";
-
-// Local design exports (replacing the decorative left panel and logo)
 import AuthLayout from "../components/auth/AuthLayout";
 
 export default function SignIn() {
@@ -31,21 +29,18 @@ export default function SignIn() {
     password: "",
   });
 
-  // Validate single field
   const validateSingleField = (field: keyof LoginFormData, value: string) => {
     const tempData = { ...loginData, [field]: value };
     const allErrors = validateLoginData(tempData);
     return allErrors[field];
   };
 
-  // Handle field blur
   const handleBlur = (field: keyof LoginFormData) => {
     setTouchedFields((prev) => new Set(prev).add(field));
     const error = validateSingleField(field, loginData[field]);
     setErrors((prev) => ({ ...prev, [field]: error }));
   };
 
-  // Handle field change with live validation
   const handleChange = (field: keyof LoginFormData, value: string) => {
     setLoginData((prev) => ({ ...prev, [field]: value }));
 
@@ -62,7 +57,7 @@ export default function SignIn() {
 
   const handleSubmit = async () => {
     const allFields = new Set(
-      Object.keys(loginData) as (keyof LoginFormData)[]
+      Object.keys(loginData) as (keyof LoginFormData)[],
     );
     setTouchedFields(allFields);
 
@@ -77,25 +72,19 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      // JSON-based authentication
-      const result = await handleJsonSignIn(
-        loginData.email.trim().toLowerCase(),
-        loginData.password
-      );
+      const result = await handleLogin(loginData);
 
       if (!result.success) {
         toast.error(
-          result.message || "The email or password you entered is incorrect"
+          result.message || "The email or password you entered is incorrect",
         );
         setLoginData((prev) => ({ ...prev, password: "" }));
         return;
       }
 
-      toast.success("Login successful! 🎉");
+      toast.success("Login successful!");
       navigate("/dashboard");
-      window.location.reload();
     } catch (error) {
-      console.error("Login error:", error);
       toast.error("An unexpected error occurred. Please try again");
     } finally {
       setIsLoading(false);
@@ -110,7 +99,6 @@ export default function SignIn() {
 
   return (
     <AuthLayout>
-      {/* Already Signed In State or Sign In form */}
       {user ? (
         <div className="space-y-6 animate-fadeIn">
           <div className="bg-secondary/10 border-2 border-secondary rounded-lg p-8 text-center space-y-4">

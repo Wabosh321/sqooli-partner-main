@@ -11,7 +11,7 @@ import {
   getSectionContainerStyle,
 } from "./SettingsSection";
 import { useDeviceSize } from "../hooks/useDeviceSize";
-import campaignsData from "../auth/data/campaigns.json";
+import { supabase } from "../lib/supabase";
 
 export default function ReportsSection() {
   const { partner } = useAuth();
@@ -39,17 +39,29 @@ export default function ReportsSection() {
   }
 
   useEffect(() => {
-    if (!partner?._id && !partner?.id) {
-      setCampaigns(undefined);
-      return;
-    }
+    const loadCampaigns = async () => {
+      if (!partner?._id && !partner?.id) {
+        setCampaigns(undefined);
+        return;
+      }
 
-    // Filter campaigns from JSON based on partner
-    const partnerId = partner?._id || partner?.id;
-    const filteredCampaigns = campaignsData.campaigns.filter(
-      (c) => c.partner_id === partnerId,
-    );
-    setCampaigns(filteredCampaigns || []);
+      try {
+        const partnerId = partner?._id || partner?.id;
+        const { data, error } = await supabase
+          .from("campaigns")
+          .select("*")
+          .eq("partner_id", partnerId);
+
+        if (error) throw error;
+
+        setCampaigns(data || []);
+      } catch (err) {
+        console.error("Error loading campaigns:", err);
+        setCampaigns([]);
+      }
+    };
+
+    loadCampaigns();
   }, [partner?._id, partner?.id]);
 
   if (partner && campaigns === undefined) {

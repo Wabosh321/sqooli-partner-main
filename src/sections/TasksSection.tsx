@@ -17,8 +17,11 @@ import { useDeviceSize } from "../hooks/useDeviceSize";
 import ConfirmActionModal from "./components/confirm-action-modal";
 import TaskDetailsModal from "./components/task-details-modal";
 import { TasksTable } from "./components/tasks-table";
-import tasksData from "../auth/data/tasks.json";
-import campaignsData from "../auth/data/campaigns.json";
+import { toast } from "sonner";
+
+// PHASE 4: Supabase integration for tasks
+import { TaskService } from "../infrastructure/task/task.service";
+import { CampaignService } from "../infrastructure/campaign/campaign.service";
 
 interface Task {
   id: string;
@@ -73,15 +76,87 @@ export default function TasksSection() {
   const [reasonText, setReasonText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
 
-  // Load tasks from JSON data
+  // PHASE 4: Load tasks from Supabase and subscribe to real-time changes
   useEffect(() => {
-    const typedTasks = tasksData.tasks.map((task) => ({
-      ...task,
-      status: task.status as "pending" | "approved" | "declined",
-    }));
-    setTasks(typedTasks);
-  }, []);
+    if (!userCampaigns || userCampaigns.length === 0) {
+      setTasksLoading(false);
+      return;
+    }
+
+    const loadTasks = async () => {
+      try {
+        setTasksLoading(true);
+        // Load tasks for all user's campaigns
+        const allTasks: any[] = [];
+        for (const campaign of userCampaigns) {
+          const campaignTasks = await TaskService.fetchTasks(campaign.id);
+          allTasks.push(...campaignTasks);
+        }
+
+        const mapped = (allTasks || []).map((t) => ({
+          ...t,
+          id: t.id,
+          campaignId: t.campaign_id,
+          dateCreated: t.created_at,
+          referenceNo: t.reference_no,
+          taskName: t.task_name,
+          status: t.status as "pending" | "approved" | "declined",
+        }));
+
+        setTasks(mapped);
+      } catch (err) {
+        console.error("Error loading tasks:", err);
+        toast.error("Failed to load tasks");
+      } finally {
+        setTasksLoading(false);
+      }
+    };
+
+    loadTasks();
+
+    // PHASE 4: Subscribe to task changes for each campaign
+    const unsubscribers: Array<() => void> = [];
+    for (const campaign of userCampaigns) {
+      const unsubscribe = TaskService.subscribeToTaskChanges(
+        campaign.id,
+        (updatedTask) => {
+          setTasks((prev) => {
+            const existing = prev.findIndex((t) => t.id === updatedTask.id);
+            if (existing >= 0) {
+              const updated = [...prev];
+              updated[existing] = {
+                ...updatedTask,
+                campaignId: updatedTask.campaign_id,
+                dateCreated: updatedTask.created_at,
+                referenceNo: updatedTask.reference_no,
+                taskName: updatedTask.task_name,
+                status: updatedTask.status,
+              };
+              return updated;
+            }
+            return [
+              ...prev,
+              {
+                ...updatedTask,
+                campaignId: updatedTask.campaign_id,
+                dateCreated: updatedTask.created_at,
+                referenceNo: updatedTask.reference_no,
+                taskName: updatedTask.task_name,
+                status: updatedTask.status,
+              },
+            ];
+          });
+        },
+      );
+      unsubscribers.push(unsubscribe);
+    }
+
+    return () => {
+      unsubscribers.forEach((u) => u());
+    };
+  }, [userCampaigns]);
 
   // Calculate responsive dimensions
   // (Removed - using standard max-w-7xl layout instead)
@@ -181,12 +256,56 @@ export default function TasksSection() {
     setIsConfirmOpen(true);
   };
 
-  const handleConfirmAction = () => {
-    if (confirmAction === "approve") {
-      setTaskStatus("approved");
-    } else {
-      setTaskStatus("declined");
+  // PHASE 4: Handle task approval/rejection via RPC
+  const handleConfirmAction = async () => {
+    if (!selectedTask || !user) return;
+
+    try {
+      const userId = user.id || (user as any)._id;
+
+      if (confirmAction === "approve") {
+        const result = await TaskService.approveTask({
+          taskId: selectedTask.id,
+          approverUserId: userId,
+          notes: reasonText,
+        });
+
+        if (result.success) {
+          toast.success("Task approved successfully");
+          setTaskStatus("approved");
+          // Remove from pending, add to complete
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === selectedTask.id ? { ...t, status: "approved" } : t,
+            ),
+          );
+        } else {
+          toast.error(result.error || "Failed to approve task");
+        }
+      } else {
+        const result = await TaskService.rejectTask({
+          taskId: selectedTask.id,
+          approverUserId: userId,
+          reason: reasonText,
+        });
+
+        if (result.success) {
+          toast.success("Task rejected successfully");
+          setTaskStatus("declined");
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === selectedTask.id ? { ...t, status: "declined" } : t,
+            ),
+          );
+        } else {
+          toast.error(result.error || "Failed to reject task");
+        }
+      }
+    } catch (err) {
+      console.error("Error processing task action:", err);
+      toast.error("An error occurred while processing your request");
     }
+
     setIsConfirmOpen(false);
   };
 

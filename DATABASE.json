@@ -1,0 +1,885 @@
+{
+  "tables": [
+    {
+      "table_name": "partners",
+      "columns": [
+        "id: uuid",
+        "org_name: text",
+        "partner_type: text",
+        "access_level: integer",
+        "commission_rate: numeric",
+        "onboarding_completed: boolean",
+        "created_at: timestamptz",
+        "updated_at: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "partners.id : None (referenced by many)"
+    },
+    {
+      "table_name": "profiles",
+      "columns": [
+        "id: uuid",
+        "email: text",
+        "username: text",
+        "full_name: text",
+        "phone: text",
+        "partner_id: uuid",
+        "parent_user_id: uuid",
+        "role: text",
+        "access_level: integer",
+        "permissions: jsonb",
+        "is_first_login: boolean",
+        "is_active: boolean",
+        "created_at: timestamptz",
+        "updated_at: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "profiles.partner_id → partners.id; profiles.parent_user_id → profiles.id; profiles.id → auth.users.id"
+    },
+    {
+      "table_name": "campaigns",
+      "columns": [
+        "id: uuid",
+        "campaign_name: text",
+        "name: text",
+        "promo_code: text",
+        "partner_id: uuid",
+        "program_id: uuid",
+        "created_by_user_id: uuid",
+        "created_by_user_role: text",
+        "duration_start: timestamptz",
+        "duration_end: timestamptz",
+        "allocated_budget: numeric",
+        "budget: numeric",
+        "spent: numeric",
+        "revenue_projection: numeric",
+        "target_signups: integer",
+        "daily_target: integer",
+        "channels: jsonb",
+        "target_audience: jsonb",
+        "performance_metrics: jsonb",
+        "metadata: jsonb",
+        "whatsapp_number: text",
+        "bundled_offers: jsonb",
+        "discount_rule: jsonb",
+        "revenue_share: jsonb",
+        "status: text",
+        "created_at: timestamptz",
+        "updated_at: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "campaigns.partner_id → partners.id; campaigns.program_id → programs.id; campaigns.created_by_user_id → profiles.id"
+    },
+    {
+      "table_name": "programs",
+      "columns": [
+        "id: uuid",
+        "program_name: text",
+        "name: text",
+        "description: text",
+        "partner_id: uuid",
+        "created_by_user_id: uuid",
+        "curriculum_subjects: jsonb",
+        "enrollment_count: integer",
+        "capacity: integer",
+        "metadata: jsonb",
+        "start_date: timestamptz",
+        "end_date: timestamptz",
+        "status: text",
+        "budget: numeric",
+        "created_at: timestamptz",
+        "updated_at: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "programs.partner_id → partners.id; programs.created_by_user_id → profiles.id"
+    },
+    {
+      "table_name": "tasks",
+      "columns": [
+        "id: uuid",
+        "partner_id: uuid",
+        "campaign_id: uuid",
+        "program_id: uuid",
+        "created_by_user_id: uuid",
+        "approver_id: uuid",
+        "approver_user_id: uuid",
+        "assigned_to_user_id: uuid",
+        "task_name: text",
+        "reference_no: text",
+        "description: text",
+        "priority: text",
+        "status: text",
+        "approval_notes: text",
+        "approval_date: timestamptz",
+        "rejection_reason: text",
+        "due_date: timestamptz",
+        "completion_date: timestamptz",
+        "completed_at: timestamptz",
+        "metadata: jsonb",
+        "created_at: timestamptz",
+        "updated_at: timestamptz",
+        "date_created: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "tasks.partner_id → partners.id; tasks.campaign_id → campaigns.id; tasks.program_id → programs.id; tasks.created_by_user_id → profiles.id; tasks.approver_id/approver_user_id/assigned_to_user_id → profiles.id"
+    },
+    {
+      "table_name": "audit_logs",
+      "columns": [
+        "id: uuid",
+        "user_id: uuid",
+        "action: text",
+        "action_type: text",
+        "resource_type: text",
+        "resource_id: text",
+        "changes: jsonb",
+        "ip_address: text",
+        "user_agent: text",
+        "timestamp: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "audit_logs.user_id → profiles.id"
+    },
+    {
+      "table_name": "user_activity_log",
+      "columns": [
+        "id: uuid",
+        "partner_id: uuid",
+        "user_id: uuid",
+        "parent_user_id: uuid",
+        "entity_type: text",
+        "entity_id: uuid",
+        "before_state: jsonb",
+        "after_state: jsonb",
+        "change_summary: text",
+        "ip_address: inet",
+        "user_agent: text",
+        "action: text",
+        "action_type: text",
+        "details: text",
+        "timestamp: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "user_activity_log.user_id → profiles.id; user_activity_log.parent_user_id → profiles.id; user_activity_log.partner_id → partners.id"
+    },
+    {
+      "table_name": "user_performance_metrics",
+      "columns": [
+        "id: uuid",
+        "partner_id: uuid",
+        "user_id: uuid",
+        "parent_user_id: uuid",
+        "campaign_id: uuid",
+        "metric_date: date",
+        "campaigns_created: integer",
+        "campaigns_completed: integer",
+        "tasks_completed: integer",
+        "tasks_approved: integer",
+        "engagement_score: numeric",
+        "conversion_count: integer",
+        "click_through_rate: numeric",
+        "impressions: integer",
+        "revenue_generated: numeric",
+        "roi: numeric",
+        "metadata: jsonb",
+        "total_campaigns: integer",
+        "active_campaigns: integer",
+        "total_earnings: numeric",
+        "pending_withdrawals: numeric",
+        "completed_tasks: integer",
+        "pending_tasks: integer",
+        "performance_score: numeric",
+        "last_updated: timestamptz",
+        "created_at: timestamptz",
+        "updated_at: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "user_performance_metrics.partner_id → partners.id; user_performance_metrics.user_id → profiles.id; user_performance_metrics.parent_user_id → profiles.id; user_performance_metrics.campaign_id → campaigns.id"
+    },
+    {
+      "table_name": "wallets",
+      "columns": [
+        "id: uuid",
+        "partner_id: uuid",
+        "user_id: uuid",
+        "paybill_number: text",
+        "account_number: text",
+        "balance: numeric",
+        "total_earnings: numeric",
+        "pending_withdrawals: numeric",
+        "payment_method: text",
+        "is_active: boolean",
+        "last_transaction_at: timestamptz",
+        "created_at: timestamptz",
+        "updated_at: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "wallets.partner_id → partners.id; wallets.user_id → profiles.id"
+    },
+    {
+      "table_name": "transactions",
+      "columns": [
+        "id: uuid",
+        "wallet_id: uuid",
+        "partner_id: uuid",
+        "user_id: uuid",
+        "campaign_id: uuid",
+        "transaction_type: text",
+        "amount: numeric",
+        "description: text",
+        "reference_number: text",
+        "metadata: jsonb",
+        "status: text",
+        "created_at: timestamptz",
+        "updated_at: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "transactions.wallet_id → wallets.id; transactions.user_id → profiles.id; transactions.partner_id → partners.id; transactions.campaign_id → campaigns.id"
+    },
+    {
+      "table_name": "withdrawals",
+      "columns": [
+        "id: uuid",
+        "wallet_id: uuid",
+        "partner_id: uuid",
+        "user_id: uuid",
+        "amount: numeric",
+        "withdrawal_method: text",
+        "mpesa_reference: text",
+        "bank_reference: text",
+        "rejection_reason: text",
+        "reviewed_by_user_id: uuid",
+        "review_notes: text",
+        "processed_at: timestamptz",
+        "completed_at: timestamptz",
+        "status: text",
+        "created_at: timestamptz",
+        "updated_at: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "withdrawals.wallet_id → wallets.id; withdrawals.partner_id → partners.id; withdrawals.user_id → profiles.id; withdrawals.reviewed_by_user_id → profiles.id"
+    },
+    {
+      "table_name": "wallet_history",
+      "columns": [
+        "id: uuid",
+        "wallet_id: uuid",
+        "action: text",
+        "previous_balance: numeric",
+        "new_balance: numeric",
+        "change_amount: numeric",
+        "reason: text",
+        "metadata: jsonb",
+        "created_at: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "wallet_history.wallet_id → wallets.id"
+    },
+    {
+      "table_name": "team_members",
+      "columns": [
+        "id: uuid",
+        "partner_id: uuid",
+        "user_id: uuid",
+        "campaign_id: uuid",
+        "program_id: uuid",
+        "role: text",
+        "permission_level: text",
+        "is_active: boolean",
+        "invited_at: timestamptz",
+        "removed_at: timestamptz",
+        "metadata: jsonb",
+        "created_at: timestamptz",
+        "updated_at: timestamptz"
+      ],
+      "primary_key": "id",
+      "foreign_keys": "team_members.partner_id → partners.id; team_members.user_id → profiles.id; team_members.campaign_id → campaigns.id; team_members.program_id → programs.id"
+    }
+  ],
+  "relations": {
+    "foreign_keys": [
+      "profiles.partner_id → partners.id",
+      "profiles.parent_user_id → profiles.id",
+      "profiles.id → auth.users.id",
+      "campaigns.partner_id → partners.id",
+      "campaigns.program_id → programs.id",
+      "campaigns.created_by_user_id → profiles.id",
+      "programs.partner_id → partners.id",
+      "programs.created_by_user_id → profiles.id",
+      "tasks.partner_id → partners.id",
+      "tasks.campaign_id → campaigns.id",
+      "tasks.program_id → programs.id",
+      "tasks.created_by_user_id → profiles.id",
+      "tasks.approver_id / approver_user_id / assigned_to_user_id → profiles.id",
+      "audit_logs.user_id → profiles.id",
+      "user_activity_log.user_id / parent_user_id → profiles.id",
+      "user_activity_log.partner_id → partners.id",
+      "user_performance_metrics.partner_id → partners.id",
+      "user_performance_metrics.user_id → profiles.id",
+      "user_performance_metrics.parent_user_id → profiles.id",
+      "user_performance_metrics.campaign_id → campaigns.id",
+      "wallets.partner_id → partners.id",
+      "wallets.user_id → profiles.id",
+      "transactions.wallet_id → wallets.id",
+      "transactions.user_id → profiles.id",
+      "transactions.partner_id → partners.id",
+      "transactions.campaign_id → campaigns.id",
+      "withdrawals.wallet_id → wallets.id",
+      "withdrawals.user_id → profiles.id",
+      "withdrawals.partner_id → partners.id",
+      "withdrawals.reviewed_by_user_id → profiles.id",
+      "wallet_history.wallet_id → wallets.id",
+      "team_members.partner_id → partners.id",
+      "team_members.user_id → profiles.id",
+      "team_members.campaign_id → campaigns.id",
+      "team_members.program_id → programs.id"
+    ]
+  },
+  "functions": [
+    {
+      "function_name": "create_user_profile",
+      "parameters": "p_email text, p_full_name text, p_phone text DEFAULT NULL, p_username text DEFAULT NULL",
+      "return_type": "TABLE(id uuid, email text, full_name text, phone text, username text, role text)",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "create_user_profile (auth variant)",
+      "parameters": "p_auth_id uuid, p_email text, p_full_name text, p_phone text, p_username text DEFAULT NULL",
+      "return_type": "TABLE(id uuid, email text, full_name text, phone text, username text, role text)",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "get_user_partner_id",
+      "parameters": "p_user_id uuid",
+      "return_type": "uuid",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "handle_campaigns_updated_at",
+      "parameters": "(none)",
+      "return_type": "trigger",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "handle_partners_updated_at",
+      "parameters": "(none)",
+      "return_type": "trigger",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "handle_profiles_updated_at",
+      "parameters": "(none)",
+      "return_type": "trigger",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "handle_programs_updated_at",
+      "parameters": "(none)",
+      "return_type": "trigger",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "handle_tasks_updated_at",
+      "parameters": "(none)",
+      "return_type": "trigger",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "handle_transactions_updated_at",
+      "parameters": "(none)",
+      "return_type": "trigger",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "handle_user_performance_metrics_updated_at",
+      "parameters": "(none)",
+      "return_type": "trigger",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "handle_wallets_updated_at",
+      "parameters": "(none)",
+      "return_type": "trigger",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "handle_withdrawals_updated_at",
+      "parameters": "(none)",
+      "return_type": "trigger",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "is_authenticated",
+      "parameters": "(none)",
+      "return_type": "boolean",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "is_campaign_owner",
+      "parameters": "p_campaign_id uuid, p_user_id uuid",
+      "return_type": "boolean",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "is_partner_admin",
+      "parameters": "p_partner_id uuid",
+      "return_type": "boolean",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "is_program_owner",
+      "parameters": "p_program_id uuid, p_user_id uuid",
+      "return_type": "boolean",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "is_super_admin",
+      "parameters": "p_user_id uuid",
+      "return_type": "boolean",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "is_task_approver",
+      "parameters": "p_task_id uuid, p_user_id uuid",
+      "return_type": "boolean",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "log_activity",
+      "parameters": "p_partner_id uuid, p_user_id uuid, p_action text, p_entity_type text, p_entity_id uuid, p_before_state jsonb DEFAULT NULL, p_after_state jsonb DEFAULT NULL, p_change_summary text DEFAULT NULL",
+      "return_type": "uuid",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_approve_task",
+      "parameters": "p_task_id uuid, p_approver_user_id uuid, p_approval_notes text DEFAULT NULL",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_create_campaign",
+      "parameters": "p_partner_id uuid, p_created_by_user_id uuid, p_campaign_name text, p_duration_start timestamptz, p_duration_end timestamptz, ...",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_create_program",
+      "parameters": "p_partner_id uuid, p_created_by_user_id uuid, p_program_name text, p_start_date timestamptz, p_end_date timestamptz, ...",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_create_team_member",
+      "parameters": "p_partner_id uuid, p_user_id uuid, p_role text, ...",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_delete_campaign",
+      "parameters": "p_campaign_id uuid",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_delete_program",
+      "parameters": "p_program_id uuid",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_log_audit_event",
+      "parameters": "p_action text, p_action_type text, p_resource_type text DEFAULT NULL, p_resource_id text DEFAULT NULL, p_changes jsonb DEFAULT NULL",
+      "return_type": "uuid",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_onboard_partner_user",
+      "parameters": "p_org_name text, p_partner_type text, p_user_email text, p_user_password text, p_full_name text, p_role text DEFAULT 'team_member'",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_process_withdrawal",
+      "parameters": "p_withdrawal_id uuid, p_status text, p_reviewed_by_user_id uuid, p_review_notes text DEFAULT NULL, p_mpesa_reference text DEFAULT NULL",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_record_transaction",
+      "parameters": "p_wallet_id uuid, p_partner_id uuid, p_user_id uuid, p_transaction_type text, p_amount numeric, ...",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_reject_task",
+      "parameters": "p_task_id uuid, p_approver_user_id uuid, p_rejection_reason text",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_request_withdrawal",
+      "parameters": "p_wallet_id uuid, p_partner_id uuid, p_user_id uuid, p_amount numeric, ...",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_update_campaign",
+      "parameters": "p_campaign_id uuid, p_campaign_name text DEFAULT NULL, ...",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_update_program",
+      "parameters": "p_program_id uuid, p_program_name text DEFAULT NULL, ...",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "rpc_update_team_member",
+      "parameters": "p_team_member_id uuid, p_role text DEFAULT NULL, ...",
+      "return_type": "jsonb",
+      "definition": "see definition below"
+    },
+    {
+      "function_name": "sync_verified_user_profile",
+      "parameters": "(trigger)",
+      "return_type": "trigger",
+      "definition": "see definition below"
+    }
+  ],
+  "function_definitions": {
+    "create_user_profile": "CREATE OR REPLACE FUNCTION public.create_user_profile(p_email text, p_full_name text, p_phone text DEFAULT NULL::text, p_username text DEFAULT NULL::text)\n RETURNS TABLE(id uuid, email text, full_name text, phone text, username text, role text)\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\nDECLARE\n  v_user_id UUID;\nBEGIN\n  -- Ensure the caller is authenticated\n  IF auth.uid() IS NULL THEN\n    RAISE EXCEPTION\n      'Not authenticated. Email verification required before profile creation.';\n  END IF;\n\n  -- Insert profile\n  INSERT INTO public.profiles (\n    id,\n    email,\n    full_name,\n    phone,\n    username,\n    role\n  )\n  VALUES (\n    auth.uid(),\n    p_email,\n    p_full_name,\n    COALESCE(p_phone, ''),\n    COALESCE(p_username, ''),\n    'team_member'\n  )\n  RETURNING id INTO v_user_id;\n\n  -- Return the created profile from the table\n  RETURN QUERY\n  SELECT\n    p.id,\n    p.email,\n    p.full_name,\n    COALESCE(p.phone, ''),\n    COALESCE(p.username, ''),\n    p.role\n  FROM public.profiles p\n  WHERE p.id = v_user_id;\n\nEXCEPTION\n  WHEN unique_violation THEN\n    RAISE EXCEPTION\n      'Email or username already exists. User may already be registered.';\n  WHEN OTHERS THEN\n    RAISE EXCEPTION\n      'Profile creation failed: %',\n      SQLERRM;\nEND;\n$function$",
+    "get_user_partner_id": "CREATE OR REPLACE FUNCTION public.get_user_partner_id(p_user_id uuid)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\nDECLARE\n  v_partner_id UUID;\nBEGIN\n  SELECT partner_id INTO v_partner_id\n  FROM public.profiles\n  WHERE id = p_user_id\n  LIMIT 1;\n\n  RETURN v_partner_id;\nEND;\n$function$",
+    "is_authenticated": "CREATE OR REPLACE FUNCTION public.is_authenticated()\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\nBEGIN\n  RETURN auth.uid() IS NOT NULL;\nEND;\n$function$",
+    "is_super_admin": "CREATE OR REPLACE FUNCTION public.is_super_admin(p_user_id uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\nBEGIN\n  RETURN EXISTS (\n    SELECT 1 FROM public.profiles\n    WHERE id = p_user_id\n    AND role IN ('super_admin', 'system_admin')\n  );\nEND;\n$function$",
+    "is_partner_admin": "CREATE OR REPLACE FUNCTION public.is_partner_admin(p_partner_id uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\nBEGIN\n  RETURN EXISTS(\n    SELECT 1 FROM public.profiles\n    WHERE partner_id = p_partner_id\n    AND (role ILIKE '%admin%' OR public.is_super_admin(id))\n  );\nEND;\n$function$",
+    "is_campaign_owner": "CREATE OR REPLACE FUNCTION public.is_campaign_owner(p_campaign_id uuid, p_user_id uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\nDECLARE\n  v_creator_id UUID;\nBEGIN\n  SELECT created_by_user_id INTO v_creator_id\n  FROM public.campaigns\n  WHERE id = p_campaign_id;\n\n  RETURN v_creator_id = p_user_id;\nEND;\n$function$",
+    "is_program_owner": "CREATE OR REPLACE FUNCTION public.is_program_owner(p_program_id uuid, p_user_id uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\nDECLARE\n  v_creator_id UUID;\nBEGIN\n  SELECT created_by_user_id INTO v_creator_id\n  FROM public.programs\n  WHERE id = p_program_id;\n\n  RETURN v_creator_id = p_user_id;\nEND;\n$function$",
+    "is_task_approver": "CREATE OR REPLACE FUNCTION public.is_task_approver(p_task_id uuid, p_user_id uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\nDECLARE\n  v_approver_id UUID;\nBEGIN\n  SELECT approver_user_id INTO v_approver_id\n  FROM public.tasks\n  WHERE id = p_task_id;\n\n  RETURN v_approver_id = p_user_id OR public.is_super_admin(p_user_id);\nEND;\n$function$",
+    "log_activity": "CREATE OR REPLACE FUNCTION public.log_activity(p_partner_id uuid, p_user_id uuid, p_action text, p_entity_type text, p_entity_id uuid, p_before_state jsonb DEFAULT NULL::jsonb, p_after_state jsonb DEFAULT NULL::jsonb, p_change_summary text DEFAULT NULL::text)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\nDECLARE\n  v_activity_id UUID;\n  v_ip_address INET;\n  v_user_agent TEXT;\nBEGIN\n  v_ip_address := inet_client_addr();\n  BEGIN\n    v_user_agent := current_setting('http.headers')::jsonb->>'user-agent';\n  EXCEPTION WHEN OTHERS THEN\n    v_user_agent := NULL;\n  END;\n\n  INSERT INTO public.user_activity_log (\n    partner_id, user_id, action, entity_type, entity_id,\n    before_state, after_state, change_summary,\n    ip_address, user_agent, created_at\n  )\n  VALUES (\n    p_partner_id, p_user_id, p_action, p_entity_type, p_entity_id,\n    p_before_state, p_after_state, p_change_summary,\n    v_ip_address, v_user_agent, CURRENT_TIMESTAMP\n  )\n  RETURNING id INTO v_activity_id;\n\n  RETURN v_activity_id;\nEND;\n$function$",
+    "rpc_approve_task": "CREATE OR REPLACE FUNCTION public.rpc_approve_task(p_task_id uuid, p_approver_user_id uuid, p_approval_notes text DEFAULT NULL::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\nDECLARE\n  v_task RECORD;\n  v_user_id UUID;\nBEGIN\n  v_user_id := COALESCE(p_approver_user_id, auth.uid());\n\n  SELECT * INTO v_task FROM public.tasks WHERE id = p_task_id;\n\n  IF v_task IS NULL THEN\n    RETURN jsonb_build_object('success', false, 'error', 'Task not found');\n  END IF;\n\n  UPDATE public.tasks\n  SET status = 'approved', approver_user_id = v_user_id, approval_notes = p_approval_notes, approval_date = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP\n  WHERE id = p_task_id;\n\n  PERFORM public.log_activity(v_task.partner_id, v_user_id, 'approved', 'task', p_task_id, NULL, NULL, 'Task approved: ' || COALESCE(v_task.task_name, 'Task ' || p_task_id));\n\n  RETURN jsonb_build_object('success', true, 'task_id', p_task_id, 'status', 'approved', 'message', 'Task approved successfully');\n\nEXCEPTION WHEN OTHERS THEN\n  RETURN jsonb_build_object('success', false, 'error', SQLERRM);\nEND;\n$function$",
+    "rpc_reject_task": "CREATE OR REPLACE FUNCTION public.rpc_reject_task(p_task_id uuid, p_approver_user_id uuid, p_rejection_reason text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\nDECLARE\n  v_task RECORD;\n  v_user_id UUID;\nBEGIN\n  v_user_id := COALESCE(p_approver_user_id, auth.uid());\n  SELECT * INTO v_task FROM public.tasks WHERE id = p_task_id;\n\n  IF v_task IS NULL THEN\n    RETURN jsonb_build_object('success', false, 'error', 'Task not found');\n  END IF;\n\n  IF p_rejection_reason IS NULL OR p_rejection_reason = '' THEN\n    RETURN jsonb_build_object('success', false, 'error', 'Rejection reason is required');\n  END IF;\n\n  UPDATE public.tasks SET status = 'declined', approver_user_id = v_user_id, rejection_reason = p_rejection_reason, updated_at = CURRENT_TIMESTAMP WHERE id = p_task_id;\n\n  PERFORM public.log_activity(v_task.partner_id, v_user_id, 'rejected', 'task', p_task_id, NULL, NULL, 'Task rejected: ' || COALESCE(v_task.task_name, 'Task ' || p_task_id) || ' - ' || p_rejection_reason);\n\n  RETURN jsonb_build_object('success', true, 'task_id', p_task_id, 'status', 'declined', 'message', 'Task rejected successfully');\n\nEXCEPTION WHEN OTHERS THEN\n  RETURN jsonb_build_object('success', false, 'error', SQLERRM);\nEND;\n$function$",
+    "rpc_create_campaign": "CREATE OR REPLACE FUNCTION public.rpc_create_campaign(p_partner_id uuid, p_created_by_user_id uuid, p_campaign_name text, p_duration_start timestamp with time zone, p_duration_end timestamp with time zone, ...)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Validates campaign date range, creates campaign record, logs activity, returns success/error JSON.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_update_campaign": "CREATE OR REPLACE FUNCTION public.rpc_update_campaign(p_campaign_id uuid, p_campaign_name text DEFAULT NULL::text, ...)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Updates campaign metadata, tracks before/after state, logs activity.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_delete_campaign": "CREATE OR REPLACE FUNCTION public.rpc_delete_campaign(p_campaign_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Deletes campaign and cascaded tasks, logs activity.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_create_program": "CREATE OR REPLACE FUNCTION public.rpc_create_program(p_partner_id uuid, p_created_by_user_id uuid, p_program_name text, ...)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Creates program record with validation, logs activity.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_update_program": "CREATE OR REPLACE FUNCTION public.rpc_update_program(p_program_id uuid, p_program_name text DEFAULT NULL::text, ...)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Updates program metadata, logs activity.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_delete_program": "CREATE OR REPLACE FUNCTION public.rpc_delete_program(p_program_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Deletes program record, logs activity.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_create_team_member": "CREATE OR REPLACE FUNCTION public.rpc_create_team_member(p_partner_id uuid, p_user_id uuid, p_role text, ...)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Validates role/permission level, creates team member record.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_update_team_member": "CREATE OR REPLACE FUNCTION public.rpc_update_team_member(p_team_member_id uuid, p_role text DEFAULT NULL::text, ...)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Updates team member role and permission level.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_record_transaction": "CREATE OR REPLACE FUNCTION public.rpc_record_transaction(p_wallet_id uuid, p_partner_id uuid, p_user_id uuid, p_transaction_type text, p_amount numeric, ...)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Records transaction, updates wallet balance and earnings, updates performance metrics.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_request_withdrawal": "CREATE OR REPLACE FUNCTION public.rpc_request_withdrawal(p_wallet_id uuid, p_partner_id uuid, p_user_id uuid, p_amount numeric, ...)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Validates balance, creates withdrawal request, updates pending withdrawals.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_process_withdrawal": "CREATE OR REPLACE FUNCTION public.rpc_process_withdrawal(p_withdrawal_id uuid, p_status text, p_reviewed_by_user_id uuid, ...)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Processes withdrawal (approved/rejected/completed), updates wallet balance, records history.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_onboard_partner_user": "CREATE OR REPLACE FUNCTION public.rpc_onboard_partner_user(p_org_name text, p_partner_type text, ...)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Creates partner record and user profile, returns partner_id and user_id.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "rpc_log_audit_event": "CREATE OR REPLACE FUNCTION public.rpc_log_audit_event(p_action text, p_action_type text, ...)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\n-- Logs audit event with action, resource, and changes. Returns audit log ID.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "sync_verified_user_profile": "CREATE OR REPLACE FUNCTION public.sync_verified_user_profile()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'auth'\nAS $function$\n-- Trigger function syncing verified auth.users into profiles table.\n-- Upserts on profile.id, updates email/username/phone if provided.\n-- Called by triggers on auth.users INSERT and UPDATE.\n-- See FUNCTIONS.sql for complete definition.\n$function$",
+    "updated_at_trigger_functions": {
+      "common_implementation": "CREATE OR REPLACE FUNCTION public.handle_<table>_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  NEW.updated_at = CURRENT_TIMESTAMP;\n  RETURN NEW;\nEND;\n$function$",
+      "functions": [
+        "handle_partners_updated_at()",
+        "handle_profiles_updated_at()",
+        "handle_campaigns_updated_at()",
+        "handle_programs_updated_at()",
+        "handle_tasks_updated_at()",
+        "handle_transactions_updated_at()",
+        "handle_user_performance_metrics_updated_at()",
+        "handle_wallets_updated_at()",
+        "handle_withdrawals_updated_at()"
+      ]
+    }
+  },
+  "policies": [
+    {
+      "policy_name": "Authenticated users can create audit logs",
+      "table": "audit_logs",
+      "commands": "INSERT",
+      "conditions": "with_check: (is_authenticated() AND ((user_id = auth.uid()) OR is_super_admin(auth.uid())))"
+    },
+    {
+      "policy_name": "Users can view own audit logs",
+      "table": "audit_logs",
+      "commands": "SELECT",
+      "conditions": "using: ((user_id = auth.uid()) OR is_super_admin(auth.uid()))"
+    },
+    {
+      "policy_name": "Partner admins can create campaigns",
+      "table": "campaigns",
+      "commands": "INSERT",
+      "conditions": "with_check: is_partner_admin(partner_id)"
+    },
+    {
+      "policy_name": "Partner admins can delete campaigns",
+      "table": "campaigns",
+      "commands": "DELETE",
+      "conditions": "using: is_partner_admin(partner_id)"
+    },
+    {
+      "policy_name": "Partner admins can update campaigns",
+      "table": "campaigns",
+      "commands": "UPDATE",
+      "conditions": "using: is_partner_admin(partner_id); with_check: is_partner_admin(partner_id)"
+    },
+    {
+      "policy_name": "Users can view own partner campaigns",
+      "table": "campaigns",
+      "commands": "SELECT",
+      "conditions": "using: ((partner_id = get_user_partner_id(auth.uid())) OR is_super_admin(auth.uid()))"
+    },
+    {
+      "policy_name": "Only super admins can create partners",
+      "table": "partners",
+      "commands": "INSERT",
+      "conditions": "with_check: is_super_admin(auth.uid())"
+    },
+    {
+      "policy_name": "Partner admins can update own partner",
+      "table": "partners",
+      "commands": "UPDATE",
+      "conditions": "using/with_check: complex admin check (see below)"
+    },
+    {
+      "policy_name": "Users can view own partner",
+      "table": "partners",
+      "commands": "SELECT",
+      "conditions": "using: ((id IN ( SELECT profiles.partner_id FROM profiles WHERE (profiles.id = auth.uid()))) OR is_super_admin(auth.uid()))"
+    },
+    {
+      "policy_name": "Admins can view partner members",
+      "table": "profiles",
+      "commands": "SELECT",
+      "conditions": "using: admin membership check (see below)"
+    },
+    {
+      "policy_name": "RPC can create confirmed user profiles",
+      "table": "profiles",
+      "commands": "INSERT",
+      "conditions": "with_check: ((auth.uid() IS NOT NULL) AND (auth.uid() = id))"
+    },
+    {
+      "policy_name": "Users can update own limited fields",
+      "table": "profiles",
+      "commands": "UPDATE",
+      "conditions": "using/with_check: (auth.uid() = id)"
+    },
+    {
+      "policy_name": "Users can view own profile",
+      "table": "profiles",
+      "commands": "SELECT",
+      "conditions": "using: ((auth.uid() = id) OR is_super_admin(auth.uid()))"
+    },
+    {
+      "policy_name": "Partner admins can create programs",
+      "table": "programs",
+      "commands": "INSERT",
+      "conditions": "with_check: is_partner_admin(partner_id)"
+    },
+    {
+      "policy_name": "Partner admins can delete programs",
+      "table": "programs",
+      "commands": "DELETE",
+      "conditions": "using: is_partner_admin(partner_id)"
+    },
+    {
+      "policy_name": "Partner admins can update programs",
+      "table": "programs",
+      "commands": "UPDATE",
+      "conditions": "using/with_check: is_partner_admin(partner_id)"
+    },
+    {
+      "policy_name": "Users can view own partner programs",
+      "table": "programs",
+      "commands": "SELECT",
+      "conditions": "using: ((partner_id = get_user_partner_id(auth.uid())) OR is_super_admin(auth.uid()))"
+    },
+    {
+      "policy_name": "Authorized users can update tasks",
+      "table": "tasks",
+      "commands": "UPDATE",
+      "conditions": "using/with_check: ((created_by_user_id = auth.uid()) OR (approver_id = auth.uid()) OR is_super_admin(auth.uid()))"
+    },
+    {
+      "policy_name": "Partner admins can delete tasks",
+      "table": "tasks",
+      "commands": "DELETE",
+      "conditions": "using: partner-admin check on related campaign partner"
+    },
+    {
+      "policy_name": "Users can create tasks in accessible campaigns",
+      "table": "tasks",
+      "commands": "INSERT",
+      "conditions": "with_check: partner-admin check on campaign partner"
+    },
+    {
+      "policy_name": "Users can view accessible tasks",
+      "table": "tasks",
+      "commands": "SELECT",
+      "conditions": "using: created/approver/partner membership OR is_super_admin(auth.uid())"
+    },
+    {
+      "policy_name": "tasks_select_own_or_assigned_or_approver",
+      "table": "tasks",
+      "commands": "SELECT",
+      "conditions": "using: (created_by_user_id = auth.uid()) OR (assigned_to_user_id = auth.uid()) OR (approver_user_id = auth.uid()) OR (partner_id = get_user_partner_id(auth.uid())) OR is_super_admin(auth.uid())"
+    },
+    {
+      "policy_name": "System can log user activity",
+      "table": "user_activity_log",
+      "commands": "INSERT",
+      "conditions": "with_check: is_super_admin(auth.uid())"
+    },
+    {
+      "policy_name": "Users can view own activity logs",
+      "table": "user_activity_log",
+      "commands": "SELECT",
+      "conditions": "using: ((user_id = auth.uid()) OR (parent_user_id = auth.uid()) OR is_super_admin(auth.uid()))"
+    },
+    {
+      "policy_name": "System can create performance metrics",
+      "table": "user_performance_metrics",
+      "commands": "INSERT",
+      "conditions": "with_check: is_super_admin(auth.uid())"
+    },
+    {
+      "policy_name": "System can update performance metrics",
+      "table": "user_performance_metrics",
+      "commands": "UPDATE",
+      "conditions": "using/with_check: is_super_admin(auth.uid())"
+    },
+    {
+      "policy_name": "Users can view own performance metrics",
+      "table": "user_performance_metrics",
+      "commands": "SELECT",
+      "conditions": "using: ((user_id = auth.uid()) OR (parent_user_id = auth.uid()) OR is_super_admin(auth.uid()))"
+    },
+    {
+      "policy_name": "System can record wallet history",
+      "table": "wallet_history",
+      "commands": "INSERT",
+      "conditions": "with_check: true"
+    }
+  ],
+  "triggers": [
+    {
+      "trigger_name": "trg_sync_verified_user_profile_insert",
+      "table": "auth.users",
+      "event": "AFTER INSERT (WHEN new.email_confirmed_at IS NOT NULL)",
+      "function": "sync_verified_user_profile()"
+    },
+    {
+      "trigger_name": "trg_sync_verified_user_profile_update",
+      "table": "auth.users",
+      "event": "AFTER UPDATE (WHEN email_confirmed or raw_user_meta_data changed)",
+      "function": "sync_verified_user_profile()"
+    },
+    {
+      "trigger_name": "campaigns_updated_at",
+      "table": "campaigns",
+      "event": "BEFORE UPDATE",
+      "function": "handle_campaigns_updated_at()"
+    },
+    {
+      "trigger_name": "partners_updated_at",
+      "table": "partners",
+      "event": "BEFORE UPDATE",
+      "function": "handle_partners_updated_at()"
+    },
+    {
+      "trigger_name": "profiles_updated_at",
+      "table": "profiles",
+      "event": "BEFORE UPDATE",
+      "function": "handle_profiles_updated_at()"
+    },
+    {
+      "trigger_name": "programs_updated_at",
+      "table": "programs",
+      "event": "BEFORE UPDATE",
+      "function": "handle_programs_updated_at()"
+    },
+    {
+      "trigger_name": "tr_check_filters",
+      "table": "realtime.subscription",
+      "event": "BEFORE INSERT OR UPDATE",
+      "function": "realtime.subscription_check_filters()"
+    },
+    {
+      "trigger_name": "enforce_bucket_name_length_trigger",
+      "table": "storage.buckets",
+      "event": "BEFORE INSERT OR UPDATE OF name",
+      "function": "storage.enforce_bucket_name_length()"
+    },
+    {
+      "trigger_name": "objects_delete_delete_prefix",
+      "table": "storage.objects",
+      "event": "AFTER DELETE",
+      "function": "storage.delete_prefix_hierarchy_trigger()"
+    },
+    {
+      "trigger_name": "objects_insert_create_prefix",
+      "table": "storage.objects",
+      "event": "BEFORE INSERT",
+      "function": "storage.objects_insert_prefix_trigger()"
+    },
+    {
+      "trigger_name": "objects_update_create_prefix",
+      "table": "storage.objects",
+      "event": "BEFORE UPDATE (WHEN name or bucket_id changed)",
+      "function": "storage.objects_update_prefix_trigger()"
+    },
+    {
+      "trigger_name": "update_objects_updated_at",
+      "table": "storage.objects",
+      "event": "BEFORE UPDATE",
+      "function": "storage.update_updated_at_column()"
+    },
+    {
+      "trigger_name": "prefixes_create_hierarchy",
+      "table": "storage.prefixes",
+      "event": "BEFORE INSERT (WHEN pg_trigger_depth() < 1)",
+      "function": "storage.prefixes_insert_trigger()"
+    },
+    {
+      "trigger_name": "prefixes_delete_hierarchy",
+      "table": "storage.prefixes",
+      "event": "AFTER DELETE",
+      "function": "storage.delete_prefix_hierarchy_trigger()"
+    },
+    {
+      "trigger_name": "tasks_updated_at",
+      "table": "tasks",
+      "event": "BEFORE UPDATE",
+      "function": "handle_tasks_updated_at()"
+    },
+    {
+      "trigger_name": "transactions_updated_at",
+      "table": "transactions",
+      "event": "BEFORE UPDATE",
+      "function": "handle_transactions_updated_at()"
+    },
+    {
+      "trigger_name": "user_performance_metrics_updated_at",
+      "table": "user_performance_metrics",
+      "event": "BEFORE UPDATE",
+      "function": "handle_user_performance_metrics_updated_at()"
+    },
+    {
+      "trigger_name": "wallets_updated_at",
+      "table": "wallets",
+      "event": "BEFORE UPDATE",
+      "function": "handle_wallets_updated_at()"
+    },
+    {
+      "trigger_name": "withdrawals_updated_at",
+      "table": "withdrawals",
+      "event": "BEFORE UPDATE",
+      "function": "handle_withdrawals_updated_at()"
+    }
+  ],
+  "appendix": {
+    "data_source": "Supabase MCP for project_ref=reomyhdphmahczmamogc",
+    "retrieved": "tables (with columns/PKs/FKs), functions (full SQL), policies (RLS using/with_check), triggers (definitions)",
+    "generated_artifacts": [
+      "FUNCTIONS.sql - Complete SQL definitions for all 40+ functions",
+      "DATABASE.md - This document with full schema, policies, and triggers"
+    ]
+  }
+}
