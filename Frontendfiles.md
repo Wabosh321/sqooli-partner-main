@@ -1,147 +1,181 @@
 # Frontend Files Inventory
 
-- app/layout.tsx
-- app/page.tsx
-- hooks/use-mobile.tsx
-- hooks/use-toast.ts
-- lib/utils.ts
-- packages/jelly-logger-system/src/frontend/context/LoggerContext.ts
-- packages/jelly-logger-system/src/frontend/context/LoggerProvider.tsx
-- packages/jelly-logger-system/src/frontend/hooks/useLogger.ts
-- src/App.tsx
-- src/Constants.ts
-- src/application/campaign/useCampaigns.ts
-- src/application/dashboard/useDashboardMetrics.ts
-- src/application/dashboard/useDashboardStats.ts
-- src/application/dashboard/useRecentActivity.ts
-- src/application/dashboard/useUpcomingCampaigns.ts
-- src/application/wallet/index.ts
-- src/application/wallet/useWalletData.ts
-- src/application/wallet/useWalletFiltering.ts
-- src/auth/handleJsonAuth.ts
-- src/components/Footer.tsx
-- src/components/Protected.tsx
-- src/components/auth/AuthLayout.tsx
-- src/components/common/AddUserDialog.tsx
-- src/components/common/CampaignAssets.tsx
-- src/components/common/CampaignDetails.tsx
-- src/components/common/ComingSoon.tsx
-- src/components/common/ConfirmationDialog.tsx
-- src/components/common/CreateCampaign.tsx
-- src/components/common/CreateCurriculumDialog.tsx
-- src/components/common/CreatePartnerDialog.tsx
-- src/components/common/CreateProgramDialog.tsx
-- src/components/common/CreateSubjectDialog.tsx
-- src/components/common/EditProgramDialog.tsx
-- src/components/common/ErrorBoundary.tsx
-- src/components/common/Loading.tsx
-- src/components/common/Logo.tsx
-- src/components/common/ManageCurriculaDialog.tsx
-- src/components/common/ManageSubjectsDialog.tsx
-- src/components/common/MiniChart.tsx
-- src/components/common/NoCampaignCard.tsx
-- src/components/common/NotificationDropDown.tsx
-- src/components/common/PageNotFound.tsx
-- src/components/common/PartnerManagement.tsx
-- src/components/common/PermissionFallbacks.tsx
-- src/components/common/PermissionRefresherBanner.tsx
-- src/components/common/PermissionWrapper.tsx
-- src/components/common/PinVerification.tsx
-- src/components/common/Profile.tsx
-- src/components/common/SocialMediaChannels.tsx
-- src/components/common/SuperAdminDashboard.tsx
-- src/components/common/SuperAdminWalletSection.tsx
-- src/components/common/ThemeButton.tsx
-- src/components/common/UserCredentialsDialog.tsx
-- src/components/common/ViewUserDialog.tsx
-- src/components/common/Wallet.tsx
-- src/components/common/WalletEditDialog.tsx
-- src/components/common/WalletSetUp.tsx
-- src/components/common/WithdrawalDialog.tsx
-- src/components/icons/BrowserControlsIcon.tsx
-- src/components/icons/CrownIcon.tsx
-- src/components/icons/HighlightIcon.tsx
-- src/components/icons/LightningIcon.tsx
-- src/components/icons/SmileyIcon.tsx
-- src/components/landing/BrowserChrome.tsx
-- src/components/landing/Footer.tsx
-- src/components/landing/PartnerCarousel.tsx
-- src/components/landing/PartnershipCard.tsx
-- src/components/landing/StatCard.tsx
-- src/components/landing/TimelineStep.tsx
-- src/components/layout/DashboardLayout.tsx
-- src/components/layout/Header.tsx
-- src/components/layout/HeroHeader.tsx
-- src/components/layout/RootLayout.tsx
-- src/components/layout/Sidebar.tsx
-- src/components/layout/header/HeaderContainer.tsx
-- src/components/layout/header/HeaderLeft.tsx
-- src/components/layout/header/HeaderRight.tsx
-- src/components/layout/header/PartnerBadge.tsx
-- src/components/layout/header/index.ts
-- src/components/layout/header/types.ts
-- src/components/layout/header/useHeaderState.ts
-- src/components/onboarding/StepAction.tsx
-- src/components/onboarding/StepItem.tsx
-- src/components/onboarding/StepProgressIndicator.tsx
-- src/components/onboarding/StepsList.tsx
-- src/components/onboarding/hooks/useOnboardingData.ts
-- src/components/onboarding/hooks/useStepProgression.ts
-- src/components/onboarding/steps/CampaignStep.tsx
-- src/components/onboarding/steps/SocialMediaStep.tsx
-- src/components/onboarding/steps/TwoFactorStep.tsx
-- src/components/onboarding/steps/UsersStep.tsx
-- src/components/onboarding/steps/WalletStep.tsx
-- src/components/onboarding/types.ts
-- src/components/ui/Typography.tsx
-- src/components/ui/alert.tsx
-- src/components/ui/avatar.tsx
-- src/components/ui/badge.tsx
-- src/components/ui/button.tsx
-- src/components/ui/card.tsx
-- src/components/ui/chart.tsx
-- src/components/ui/checkbox.tsx
-- src/components/ui/dialog.tsx
-- src/components/ui/dropdown-menu.tsx
-- src/components/ui/input.tsx
-- src/components/ui/label.tsx
-- src/components/ui/popover.tsx
-- src/components/ui/radio-group.tsx
-- src/components/ui/scroll-area.tsx
-- src/components/ui/select.tsx
-- src/components/ui/separator.tsx
-- src/components/ui/sheet.tsx
-- src/components/ui/sidebar.tsx
-- src/components/ui/sidebar/SidebarContext.tsx
-- src/components/ui/sidebar/SidebarItem.tsx
-- src/components/ui/sidebar/SidebarRoot.tsx
-- src/components/ui/sidebar/SidebarSection.tsx
-- src/components/ui/sidebar/index.ts
-- src/components/ui/sidebar/resolveSidebarSections.ts
-- src/components/ui/sidebar/sidebar.config.ts
-- src/components/ui/sidebar/sidebar.styles.ts
-- src/components/ui/sidebar/useSidebarNavigation.ts
-- src/components/ui/skeleton.tsx
-- src/components/ui/sonner.tsx
-- src/components/ui/table.tsx
-- src/components/ui/tabs.tsx
-- src/components/ui/textarea.tsx
-- src/components/ui/tooltip.tsx
-- src/context/PermissionContext.tsx
-- src/context/PermissionProvider.tsx
-- src/context/ThemeContext.tsx
-- src/context/ThemeProvider.tsx
-- src/domain/campaign/types.ts
-- src/domain/wallet/index.ts
-- src/domain/wallet/types.ts
-- src/domain/wallet/wallet.domain.ts
-- src/hooks/use-mobile.ts
-- src/hooks/useActivityTracker.ts
-- src/hooks/useAuth.ts
-- src/hooks/useDeviceSize.ts
-- src/hooks/usePartnerAccess.ts
-- src/hooks/usePartnerPermissions.ts
-- src/hooks/usePermission.ts
-- src/hooks/useTeamData.ts
-- src/hooks/useTheme.ts
-- src/hooks/useUserEnrollments.ts
+**Root:** `/vercel/share/v0-project/src`  
+**Extensions:** .ts, .tsx, .js, .jsx
+
+## Frontend File List
+
+### Application Layer (Hooks/Composition)
+- application/campaign/useCampaigns.ts
+- application/dashboard/useDashboardMetrics.ts
+- application/dashboard/useDashboardStats.ts
+- application/dashboard/useRecentActivity.ts
+- application/dashboard/useUpcomingCampaigns.ts
+- application/wallet/index.ts
+- application/wallet/useWalletData.ts
+- application/wallet/useWalletFiltering.ts
+
+### Auth Components
+- auth/handleJsonAuth.ts
+- components/auth/AuthLayout.tsx
+- components/common/PinVerification.tsx
+- pages/AuthCallback.tsx
+
+### UI Components (Core Library)
+- components/ui/Typography.tsx
+- components/ui/alert.tsx
+- components/ui/avatar.tsx
+- components/ui/badge.tsx
+- components/ui/button.tsx
+- components/ui/card.tsx
+- components/ui/chart.tsx
+- components/ui/checkbox.tsx
+- components/ui/dialog.tsx
+- components/ui/dropdown-menu.tsx
+- components/ui/input.tsx
+- components/ui/label.tsx
+- components/ui/popover.tsx
+- components/ui/radio-group.tsx
+- components/ui/scroll-area.tsx
+- components/ui/select.tsx
+- components/ui/separator.tsx
+- components/ui/sheet.tsx
+- components/ui/sidebar.tsx
+- components/ui/skeleton.tsx
+- components/ui/sonner.tsx
+- components/ui/table.tsx
+- components/ui/tabs.tsx
+- components/ui/textarea.tsx
+- components/ui/tooltip.tsx
+
+### Sidebar Components
+- components/ui/sidebar/SidebarContext.tsx
+- components/ui/sidebar/SidebarItem.tsx
+- components/ui/sidebar/SidebarRoot.tsx
+- components/ui/sidebar/SidebarSection.tsx
+- components/ui/sidebar/index.ts
+- components/ui/sidebar/resolveSidebarSections.ts
+- components/ui/sidebar/sidebar.config.ts
+- components/ui/sidebar/sidebar.styles.ts
+- components/ui/sidebar/useSidebarNavigation.ts
+
+### Common Components
+- components/Footer.tsx
+- components/Protected.tsx
+- components/common/AddUserDialog.tsx
+- components/common/CampaignAssets.tsx
+- components/common/CampaignDetails.tsx
+- components/common/ComingSoon.tsx
+- components/common/ConfirmationDialog.tsx
+- components/common/CreateCampaign.tsx
+- components/common/CreateCurriculumDialog.tsx
+- components/common/CreatePartnerDialog.tsx
+- components/common/CreateProgramDialog.tsx
+- components/common/CreateSubjectDialog.tsx
+- components/common/EditProgramDialog.tsx
+- components/common/ErrorBoundary.tsx
+- components/common/Loading.tsx
+- components/common/Logo.tsx
+- components/common/ManageCurriculaDialog.tsx
+- components/common/ManageSubjectsDialog.tsx
+- components/common/MiniChart.tsx
+- components/common/NoCampaignCard.tsx
+- components/common/NotificationDropDown.tsx
+- components/common/PageNotFound.tsx
+- components/common/PartnerManagement.tsx
+- components/common/PermissionFallbacks.tsx
+- components/common/PermissionRefresherBanner.tsx
+- components/common/PermissionWrapper.tsx
+- components/common/Profile.tsx
+- components/common/SocialMediaChannels.tsx
+- components/common/SuperAdminDashboard.tsx
+- components/common/SuperAdminWalletSection.tsx
+- components/common/ThemeButton.tsx
+- components/common/UserCredentialsDialog.tsx
+- components/common/ViewUserDialog.tsx
+- components/common/Wallet.tsx
+- components/common/WalletEditDialog.tsx
+- components/common/WalletSetUp.tsx
+- components/common/WithdrawalDialog.tsx
+
+### Icons
+- components/icons/BrowserControlsIcon.tsx
+- components/icons/CrownIcon.tsx
+- components/icons/HighlightIcon.tsx
+- components/icons/LightningIcon.tsx
+- components/icons/SmileyIcon.tsx
+
+### Landing Page Components
+- components/landing/BrowserChrome.tsx
+- components/landing/Footer.tsx
+- components/landing/PartnerCarousel.tsx
+- components/landing/PartnershipCard.tsx
+- components/landing/StatCard.tsx
+- components/landing/TimelineStep.tsx
+
+### Layout Components
+- components/layout/DashboardLayout.tsx
+- components/layout/Header.tsx
+- components/layout/HeroHeader.tsx
+- components/layout/RootLayout.tsx
+- components/layout/Sidebar.tsx
+- components/layout/header/HeaderContainer.tsx
+- components/layout/header/HeaderLeft.tsx
+- components/layout/header/HeaderRight.tsx
+- components/layout/header/PartnerBadge.tsx
+- components/layout/header/index.ts
+- components/layout/header/types.ts
+- components/layout/header/useHeaderState.ts
+
+### Onboarding Components
+- components/onboarding/StepAction.tsx
+- components/onboarding/StepItem.tsx
+- components/onboarding/StepProgressIndicator.tsx
+- components/onboarding/StepsList.tsx
+- components/onboarding/hooks/useOnboardingData.ts
+- components/onboarding/hooks/useStepProgression.ts
+- components/onboarding/steps/CampaignStep.tsx
+- components/onboarding/steps/SocialMediaStep.tsx
+- components/onboarding/steps/TwoFactorStep.tsx
+- components/onboarding/steps/UsersStep.tsx
+- components/onboarding/steps/WalletStep.tsx
+- components/onboarding/types.ts
+
+### Context & Providers
+- context/PermissionContext.tsx
+- context/PermissionProvider.tsx
+- context/ThemeContext.tsx
+- context/ThemeProvider.tsx
+
+### Custom Hooks
+- hooks/use-mobile.ts
+- hooks/useActivityTracker.ts
+- hooks/useAuth.ts
+- hooks/useDeviceSize.ts
+- hooks/usePartnerAccess.ts
+- hooks/usePartnerPermissions.ts
+- hooks/usePermission.ts
+- hooks/useTeamData.ts
+- hooks/useTheme.ts
+- hooks/useUserEnrollments.ts
+- hooks/useUserRevenue.ts
+- hooks/useUserTransactions.ts
+
+### Integrations
+- integrations/logger-context.ts
+- integrations/logger-setup.ts
+
+### Pages
+- pages/AuthCallback.tsx
+- pages/Dashboard.tsx
+- pages/Hero.tsx
+
+### Root/Entry
+- App.tsx
+- main.tsx
+- Constants.ts
+
+## Notes
+- Only UI/client-rendered code included
+- Excludes database services, API layer, and backend utilities
+- Includes UI components, hooks, contexts, and page layouts
