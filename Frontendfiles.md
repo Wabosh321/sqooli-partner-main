@@ -1,12 +1,15 @@
 # Frontend Files Inventory
 
-**Root:** `/vercel/share/v0-project/src`  
-**Extensions:** .ts, .tsx, .js, .jsx
+Root: /vercel/share/v0-project/src  
+Included folders: application, assets, auth, components, context, hooks, pages, sections, theme, types, ui, utils  
+Extensions: .ts, .tsx, .js, .jsx
 
 ## Frontend File List
-
-### Application Layer (Hooks/Composition)
+- App.tsx
+- Constants.ts
 - application/campaign/useCampaigns.ts
+- application/dashboard/__tests__/useDashboardMetrics.test.ts
+- application/dashboard/__tests__/useUpcomingCampaigns.test.ts
 - application/dashboard/useDashboardMetrics.ts
 - application/dashboard/useDashboardStats.ts
 - application/dashboard/useRecentActivity.ts
@@ -14,54 +17,10 @@
 - application/wallet/index.ts
 - application/wallet/useWalletData.ts
 - application/wallet/useWalletFiltering.ts
-
-### Auth Components
 - auth/handleJsonAuth.ts
-- components/auth/AuthLayout.tsx
-- components/common/PinVerification.tsx
-- pages/AuthCallback.tsx
-
-### UI Components (Core Library)
-- components/ui/Typography.tsx
-- components/ui/alert.tsx
-- components/ui/avatar.tsx
-- components/ui/badge.tsx
-- components/ui/button.tsx
-- components/ui/card.tsx
-- components/ui/chart.tsx
-- components/ui/checkbox.tsx
-- components/ui/dialog.tsx
-- components/ui/dropdown-menu.tsx
-- components/ui/input.tsx
-- components/ui/label.tsx
-- components/ui/popover.tsx
-- components/ui/radio-group.tsx
-- components/ui/scroll-area.tsx
-- components/ui/select.tsx
-- components/ui/separator.tsx
-- components/ui/sheet.tsx
-- components/ui/sidebar.tsx
-- components/ui/skeleton.tsx
-- components/ui/sonner.tsx
-- components/ui/table.tsx
-- components/ui/tabs.tsx
-- components/ui/textarea.tsx
-- components/ui/tooltip.tsx
-
-### Sidebar Components
-- components/ui/sidebar/SidebarContext.tsx
-- components/ui/sidebar/SidebarItem.tsx
-- components/ui/sidebar/SidebarRoot.tsx
-- components/ui/sidebar/SidebarSection.tsx
-- components/ui/sidebar/index.ts
-- components/ui/sidebar/resolveSidebarSections.ts
-- components/ui/sidebar/sidebar.config.ts
-- components/ui/sidebar/sidebar.styles.ts
-- components/ui/sidebar/useSidebarNavigation.ts
-
-### Common Components
 - components/Footer.tsx
 - components/Protected.tsx
+- components/auth/AuthLayout.tsx
 - components/common/AddUserDialog.tsx
 - components/common/CampaignAssets.tsx
 - components/common/CampaignDetails.tsx
@@ -86,6 +45,7 @@
 - components/common/PermissionFallbacks.tsx
 - components/common/PermissionRefresherBanner.tsx
 - components/common/PermissionWrapper.tsx
+- components/common/PinVerification.tsx
 - components/common/Profile.tsx
 - components/common/SocialMediaChannels.tsx
 - components/common/SuperAdminDashboard.tsx
@@ -97,23 +57,17 @@
 - components/common/WalletEditDialog.tsx
 - components/common/WalletSetUp.tsx
 - components/common/WithdrawalDialog.tsx
-
-### Icons
 - components/icons/BrowserControlsIcon.tsx
 - components/icons/CrownIcon.tsx
 - components/icons/HighlightIcon.tsx
 - components/icons/LightningIcon.tsx
 - components/icons/SmileyIcon.tsx
-
-### Landing Page Components
 - components/landing/BrowserChrome.tsx
 - components/landing/Footer.tsx
 - components/landing/PartnerCarousel.tsx
 - components/landing/PartnershipCard.tsx
 - components/landing/StatCard.tsx
 - components/landing/TimelineStep.tsx
-
-### Layout Components
 - components/layout/DashboardLayout.tsx
 - components/layout/Header.tsx
 - components/layout/HeroHeader.tsx
@@ -126,8 +80,6 @@
 - components/layout/header/index.ts
 - components/layout/header/types.ts
 - components/layout/header/useHeaderState.ts
-
-### Onboarding Components
 - components/onboarding/StepAction.tsx
 - components/onboarding/StepItem.tsx
 - components/onboarding/StepProgressIndicator.tsx
@@ -140,14 +92,44 @@
 - components/onboarding/steps/UsersStep.tsx
 - components/onboarding/steps/WalletStep.tsx
 - components/onboarding/types.ts
-
-### Context & Providers
+- components/ui/Typography.tsx
+- components/ui/alert.tsx
+- components/ui/avatar.tsx
+- components/ui/badge.tsx
+- components/ui/button.tsx
+- components/ui/card.tsx
+- components/ui/chart.tsx
+- components/ui/checkbox.tsx
+- components/ui/dialog.tsx
+- components/ui/dropdown-menu.tsx
+- components/ui/input.tsx
+- components/ui/label.tsx
+- components/ui/popover.tsx
+- components/ui/radio-group.tsx
+- components/ui/scroll-area.tsx
+- components/ui/select.tsx
+- components/ui/separator.tsx
+- components/ui/sheet.tsx
+- components/ui/sidebar.tsx
+- components/ui/sidebar/SidebarContext.tsx
+- components/ui/sidebar/SidebarItem.tsx
+- components/ui/sidebar/SidebarRoot.tsx
+- components/ui/sidebar/SidebarSection.tsx
+- components/ui/sidebar/index.ts
+- components/ui/sidebar/resolveSidebarSections.ts
+- components/ui/sidebar/sidebar.config.ts
+- components/ui/sidebar/sidebar.styles.ts
+- components/ui/sidebar/useSidebarNavigation.ts
+- components/ui/skeleton.tsx
+- components/ui/sonner.tsx
+- components/ui/table.tsx
+- components/ui/tabs.tsx
+- components/ui/textarea.tsx
+- components/ui/tooltip.tsx
 - context/PermissionContext.tsx
 - context/PermissionProvider.tsx
 - context/ThemeContext.tsx
 - context/ThemeProvider.tsx
-
-### Custom Hooks
 - hooks/use-mobile.ts
 - hooks/useActivityTracker.ts
 - hooks/useAuth.ts
@@ -160,22 +142,10 @@
 - hooks/useUserEnrollments.ts
 - hooks/useUserRevenue.ts
 - hooks/useUserTransactions.ts
-
-### Integrations
-- integrations/logger-context.ts
-- integrations/logger-setup.ts
-
-### Pages
+- main.tsx
 - pages/AuthCallback.tsx
 - pages/Dashboard.tsx
 - pages/Hero.tsx
 
-### Root/Entry
-- App.tsx
-- main.tsx
-- Constants.ts
-
 ## Notes
-- Only UI/client-rendered code included
-- Excludes database services, API layer, and backend utilities
-- Includes UI components, hooks, contexts, and page layouts
+- Only client/UI-focused code included
