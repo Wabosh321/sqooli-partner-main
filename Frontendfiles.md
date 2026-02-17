@@ -1,7 +1,7 @@
 # Frontend Files Inventory
 
 Root: /vercel/share/v0-project/src  
-Included folders: application, assets, auth, components, context, hooks, pages, sections, theme, types, ui, utils  
+Included folders: application, auth, components, context, hooks, pages, ui  
 Extensions: .ts, .tsx, .js, .jsx
 
 ## Frontend File List

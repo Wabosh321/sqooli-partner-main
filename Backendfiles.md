@@ -1,7 +1,7 @@
 # Backend + API Files Inventory
 
 Root: /vercel/share/v0-project/src  
-Included folders: domain, infrastructure, lib, services, utils  
+Included folders: domain, infrastructure, lib, services  
 Extensions: .ts, .tsx, .js, .jsx
 
 ## Backend/API File List
