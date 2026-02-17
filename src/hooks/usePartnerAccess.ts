@@ -1,4 +1,5 @@
 import { useAuth } from "./useAuth";
+import resolveSidebarSections from "../components/ui/sidebar/resolveSidebarSections";
 
 export interface PartnerAccessConfig {
   partnerType: string | null;
@@ -11,52 +12,14 @@ export interface PartnerAccessConfig {
   canAccessUsers: boolean;
   canAccessPrograms: boolean;
   canAccessSettings: boolean;
+  canAccessTasks: boolean;
+  canAccessBeneficiaries: boolean;
+  canAccessSponsorships: boolean;
   canAccessSection: (section: string) => boolean;
+  isSectionAllowed: (section: string) => boolean;
+  isSectionLocked: (section: string) => boolean;
   getAvailableSections: () => string[];
 }
-
-const SECTION_ACCESS_BY_PARTNER_TYPE: Record<string, string[]> = {
-  affiliate: ["dashboard", "campaigns", "wallet"],
-  media: ["dashboard", "campaigns", "wallet", "reports", "tasks"],
-  corporate: ["dashboard", "campaigns", "wallet", "reports"],
-  institutional: [
-    "dashboard",
-    "campaigns",
-    "wallet",
-    "reports",
-    "users",
-    "programs",
-    "tasks",
-    "settings",
-  ],
-};
-
-const SECTION_ACCESS_BY_LEVEL: Record<number, string[]> = {
-  0: [],
-  25: ["dashboard", "campaigns", "wallet"],
-  35: ["dashboard", "campaigns", "wallet", "reports"],
-  40: ["dashboard", "campaigns", "wallet", "reports"],
-  45: [
-    "dashboard",
-    "campaigns",
-    "wallet",
-    "reports",
-    "users",
-    "programs",
-    "tasks",
-    "settings",
-  ],
-  100: [
-    "dashboard",
-    "campaigns",
-    "wallet",
-    "reports",
-    "users",
-    "programs",
-    "tasks",
-    "settings",
-  ],
-};
 
 export function usePartnerAccess(): PartnerAccessConfig {
   const { partner, user } = useAuth();
@@ -67,41 +30,29 @@ export function usePartnerAccess(): PartnerAccessConfig {
     (partner as any)?.commission_rate || null;
   const userRole: string | null = (user as any)?.role || null;
 
-  const getAvailableSections = (): string[] => {
-    if (
-      userRole === "admin_partner" ||
-      userRole === "super_admin" ||
-      userRole === "partner_admin"
-    ) {
-      return [
-        "dashboard",
-        "campaigns",
-        "wallet",
-        "reports",
-        "users",
-        "programs",
-        "tasks",
-        "settings",
-      ];
-    }
-
-    if (accessLevel !== null && SECTION_ACCESS_BY_LEVEL[accessLevel]) {
-      return SECTION_ACCESS_BY_LEVEL[accessLevel];
-    }
-
-    if (partnerType && SECTION_ACCESS_BY_PARTNER_TYPE[partnerType]) {
-      return SECTION_ACCESS_BY_PARTNER_TYPE[partnerType];
-    }
-
-    return SECTION_ACCESS_BY_PARTNER_TYPE.affiliate;
+  const partnerFlags = {
+    onboarding_completed: (partner as any)?.onboarding_completed ?? true,
+    wallet_setup_completed: (partner as any)?.wallet_setup_completed ?? false,
+    campaign_created: (partner as any)?.campaign_created ?? false,
   };
 
-  const canAccessSection = (section: string): boolean => {
-    const available = getAvailableSections();
-    return available.includes(section.toLowerCase());
-  };
+  const resolver = resolveSidebarSections({
+    partnerType: (partnerType as any) || undefined,
+    accessLevel: accessLevel ?? undefined,
+    userRole: userRole ?? undefined,
+    permissions: null,
+    partnerFlags,
+    fallback: undefined,
+  });
 
-  const availableSections = getAvailableSections();
+  const getAvailableSections = (): string[] => resolver.visibleSections;
+
+  const canAccessSection = (section: string): boolean =>
+    resolver.isVisible(section);
+  const isSectionAllowed = (section: string): boolean =>
+    resolver.isAllowed(section);
+  const isSectionLocked = (section: string): boolean =>
+    resolver.isLocked(section);
 
   return {
     partnerType,
@@ -114,7 +65,12 @@ export function usePartnerAccess(): PartnerAccessConfig {
     canAccessUsers: canAccessSection("users"),
     canAccessPrograms: canAccessSection("programs"),
     canAccessSettings: canAccessSection("settings"),
+    canAccessTasks: canAccessSection("tasks"),
+    canAccessBeneficiaries: canAccessSection("beneficiaries"),
+    canAccessSponsorships: canAccessSection("sponsorships"),
     canAccessSection,
+    isSectionAllowed,
+    isSectionLocked,
     getAvailableSections,
   };
 }

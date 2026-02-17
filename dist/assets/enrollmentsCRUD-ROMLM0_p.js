@@ -1,0 +1,2 @@
+import{insertRow as e,listTable as r,getById as o}from"./genericHelpers-B-O-sM_H.js";import"./supabase-Cu0qjYwd.js";async function a(n){return r("program_enrollments",n)}async function s(n){return o("program_enrollments",n)}async function i(n,t){return r("program_enrollments",{...t,filters:{campaign_id:n}})}async function c(n){return e("program_enrollments",n)}export{c as createEnrollment,s as getEnrollment,i as getEnrollmentsByCampaign,a as listEnrollments};
+//# sourceMappingURL=enrollmentsCRUD-ROMLM0_p.js.map

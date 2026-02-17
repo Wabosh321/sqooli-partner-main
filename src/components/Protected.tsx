@@ -1,38 +1,36 @@
-"use client";
+'use client';
 import type { ReactNode, ReactElement } from "react";
-import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2 } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
-export function ProtectedRoute({
-  children,
-}: ProtectedRouteProps): ReactElement | null {
+export function ProtectedRoute({ children }: ProtectedRouteProps): ReactElement | null {
   const { user, loading, isFirstLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     if (!loading) {
-      // 1️⃣ Not logged in - redirect to sign-in
+      // 1️⃣ Not logged in
       if (!user) {
-        navigate("/signIn");
+        navigate('/signIn');
         return;
       }
 
-      // 2️⃣ First-time users should go to onboarding
-      if (isFirstLogin && location.pathname !== "/onboarding") {
-        navigate("/onboarding");
+      // 2️⃣ First-time users should *always* be on onboarding
+      if (isFirstLogin && location.pathname !== '/onboarding') {
+        navigate('/onboarding');
         return;
       }
 
       // 3️⃣ Completed onboarding should not revisit onboarding
-      if (!isFirstLogin && location.pathname === "/onboarding") {
-        navigate("/dashboard");
+      if (!isFirstLogin && location.pathname === '/onboarding') {
+        navigate('/dashboard');
         return;
       }
     }

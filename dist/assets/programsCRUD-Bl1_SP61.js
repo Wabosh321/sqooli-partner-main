@@ -1,0 +1,2 @@
+import{updateRow as o,insertRow as n,getById as a,listTable as e}from"./genericHelpers-B-O-sM_H.js";import"./supabase-Cu0qjYwd.js";async function g(r){return e("programs",r)}async function u(r){return a("programs",r)}async function c(r){return n("programs",r)}async function i(r,t){return o("programs",r,t)}export{c as createProgram,u as getProgram,g as listPrograms,i as updateProgram};
+//# sourceMappingURL=programsCRUD-Bl1_SP61.js.map

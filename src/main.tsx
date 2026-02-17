@@ -1,11 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import ErrorBoundary from './components/common/ErrorBoundary';
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import "./index.css";
 
 import { ThemeProvider } from "./context/ThemeProvider";
 import { PermissionProvider } from "./context/PermissionProvider";
+import { LoggerProvider } from "@jelly/logger";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
 import { devLogger } from "./lib/devLogger";
@@ -24,19 +25,21 @@ if (import.meta.env.DEV) {
   }
 }
 
-
-
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <ThemeProvider>
-        <PermissionProvider>
-          <ErrorBoundary>
-            <App />
-          </ErrorBoundary>
-          <Toaster />
-        </PermissionProvider>
-      </ThemeProvider>
-    </BrowserRouter>
-  </React.StrictMode>
+    <LoggerProvider
+      config={{ serviceName: "sqooli-partner-portal", autoCaptureErrors: true }}
+    >
+      <BrowserRouter>
+        <ThemeProvider>
+          <PermissionProvider>
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
+            <Toaster />
+          </PermissionProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </LoggerProvider>
+  </React.StrictMode>,
 );

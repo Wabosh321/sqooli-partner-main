@@ -1,0 +1,2 @@
+import{s as o}from"./supabase-Cu0qjYwd.js";import{updateRow as i,insertRow as c}from"./genericHelpers-B-O-sM_H.js";async function s(e,n){try{const{data:t,error:r}=await o.from(e).select("*").eq("legacy_convex_id",n).limit(1).maybeSingle();return{data:t,error:r}}catch(t){return{data:null,error:t}}}async function f(e,n,t){try{const r=await s(e,n);if(r.data)return i(e,r.data.id,t);{const a={...t,legacy_convex_id:n};return c(e,a)}}catch(r){return{data:null,error:r}}}export{s as findByConvexId,f as upsertWithConvexId};
+//# sourceMappingURL=convexIdSupport-x9fQ1gQ6.js.map

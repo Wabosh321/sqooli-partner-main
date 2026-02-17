@@ -4,37 +4,17 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { usePermissions } from "../hooks/usePermission";
 import { usePartnerAccess } from "../hooks/usePartnerAccess";
+import { usePartnerPermissions } from "../hooks/usePartnerPermissions";
 import { useDeviceSize } from "../hooks/useDeviceSize";
-import { useUserCampaigns } from "../hooks/useUserCampaigns";
-import { useUserRevenue } from "../hooks/useUserRevenue";
-import { PermissionWrapper } from "../components/common/PermissionWrapper";
+import { supabase } from "../lib/supabase";
 import { Loading } from "../components/common/Loading";
 import { isConvexUser } from "../types/auth.types";
 import type { DashboardCampaign } from "../types/global.types";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
+import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import Wallet from "../components/common/Wallet";
-import MiniChart from "../components/common/MiniChart";
-import { NoCampaignCard } from "../components/common/NoCampaignCard";
 import CreateCampaignWizard from "../components/common/CreateCampaign";
 import CreateProgramDialog from "../components/common/CreateProgramDialog";
-import {
-  Lock,
-  AlertCircle,
-  TrendingUp,
-  TrendingDown,
-  Award,
-  DollarSign,
-  BookOpen,
-  CheckCircle,
-  Clock,
-  Users,
-} from "lucide-react";
+import { Lock, AlertCircle } from "lucide-react";
 import SuperAdminDashboard from "../components/common/SuperAdminDashboard";
 import {
   createAuthDebugRecord,
@@ -45,12 +25,6 @@ import WalletBalanceCard from "../ui/dashboard/WalletBalanceCard";
 import SmallCardsGrid from "../ui/dashboard/SmallCardsGrid";
 import UpcomingCampaigns from "../ui/dashboard/UpcomingCampaigns";
 import RecentActivity from "../ui/dashboard/RecentActivity";
-import {
-  DASHBOARD_SECTION_CONFIG,
-  getResponsivePadding,
-  getSectionContainerStyle,
-} from "./SettingsSection";
-import { Title } from "../components/ui/Typography";
 
 export default function DashboardSection({
   activeItem,
@@ -60,17 +34,29 @@ export default function DashboardSection({
   setActiveItem: (item: string) => void;
 }) {
   const { isMobile, isTablet } = useDeviceSize();
-  const padding = getResponsivePadding(isMobile, isTablet);
   const { user, partner } = useAuth();
   const { hasPermission, userRole, permissions } = usePermissions();
   const { canAccessDashboard, partnerType, accessLevel, getAvailableSections } =
     usePartnerAccess();
+  const { isBeneficiaryPartner, isMediaPartner } = usePartnerPermissions();
+
   const [showCreateWizard, setShowCreateWizard] = useState(false);
   const [showCreateProgramDialog, setShowCreateProgramDialog] = useState(false);
+  const [wallet, setWallet] = useState<any>(null);
+  const [campaigns, setCampaigns] = useState<DashboardCampaign[] | undefined>(
+    undefined,
+  );
 
   const isSuperAdmin = isConvexUser(user) && userRole === "super_admin";
+  const isDashboardBeneficiaryMode = isBeneficiaryPartner();
+  const isDashboardMediaMode = isMediaPartner();
+  const canViewDashboard =
+    hasPermission("dashboard.read") || hasPermission("dashboard.admin");
+  const canCreateCampaigns = hasPermission("campaigns.write");
 
-  // DEBUG: Log authorization decision
+  const partnerId = (partner as any)?.id ?? (partner as any)?._id;
+
+  // Debug authorization
   useEffect(() => {
     const debugRecord = createAuthDebugRecord(
       user,
@@ -93,9 +79,61 @@ export default function DashboardSection({
     getAvailableSections,
   ]);
 
-  // Permission guard
+  // Fetch data (PHASE 4 REFACTOR: Use RPCs instead of direct queries)
+  useEffect(() => {
+    if (!partnerId || !canViewDashboard) {
+      setCampaigns(undefined);
+      return;
+    }
+
+    let mounted = true;
+
+    (async () => {
+      try {
+        // PHASE 4: Use get_partner_campaigns RPC
+        const { data: campaignsData, error: campaignsError } =
+          await supabase.rpc("get_partner_campaigns", {
+            p_partner_id: partnerId,
+          });
+
+        if (campaignsError) {
+          console.error("Error loading campaigns:", campaignsError);
+          if (mounted) setCampaigns([]);
+          return;
+        }
+
+        if (mounted) setCampaigns((campaignsData as DashboardCampaign[]) || []);
+
+        // PHASE 4: Use get_partner_wallet RPC
+        const { data: walletData, error: walletError } = await supabase.rpc(
+          "get_partner_wallet",
+          { p_partner_id: partnerId },
+        );
+
+        if (walletError) {
+          console.error("Error loading wallet:", walletError);
+        } else if (
+          mounted &&
+          walletData &&
+          Array.isArray(walletData) &&
+          walletData.length > 0
+        ) {
+          setWallet(walletData[0]);
+        }
+      } catch (err) {
+        console.error(err);
+        if (mounted) setCampaigns([]);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [partnerId, canViewDashboard]);
+
+  // Permission guard for non-super admin
   if (!canAccessDashboard && !isSuperAdmin && partnerType) {
-    console.warn("DashboardSection: Access Denied - canAccessDashboard=false", {
+    console.warn("DashboardSection: Access Denied", {
       userRole,
       partnerType,
       accessLevel,
@@ -114,27 +152,6 @@ export default function DashboardSection({
       </div>
     );
   }
-
-  // Permission checks
-  const isDashboardAdmin = hasPermission("dashboard.admin");
-  const canViewFullDashboard = hasPermission("dashboard.read");
-  const canViewDashboard = isDashboardAdmin || canViewFullDashboard;
-  const canCreateCampaigns = hasPermission("campaigns.write");
-
-  // Use user campaigns and revenue hooks
-  const { campaigns: userCampaigns, loading: campaignsLoading } =
-    useUserCampaigns();
-  const { revenue: userRevenue, loading: revenueLoading } = useUserRevenue();
-
-  const partnerId = (partner as any)?.id ?? (partner as any)?._id;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-KE", {
-      style: "currency",
-      currency: "KES",
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
 
   if (isSuperAdmin) {
     return <SuperAdminDashboard setActiveItem={setActiveItem} />;
@@ -175,44 +192,173 @@ export default function DashboardSection({
   }
 
   return (
-    <div style={getSectionContainerStyle(padding)}>
+    <div
+      style={{
+        width: "100%",
+        minHeight: "100vh",
+        backgroundColor: "var(--color-dashboard-bg)",
+        padding: isMobile ? "16px" : "12px 32px",
+      }}
+    >
       <div
-        className="w-full"
         style={{
-          maxWidth: "100%",
-          width: "max(88.33vw, 1272px)",
+          maxWidth: "1272px",
+          width: "100%",
           margin: "0 auto",
           display: "flex",
           flexDirection: "column",
-          gap: "24px",
+          gap: "16px",
         }}
       >
-        {/* HEADER */}
+        {/* HEADER - Dashboard title + Date picker */}
         <div
           style={{
             width: "100%",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            height: "max(4.2vh, 43px)",
-            gap: "max(0.69vw, 10px)",
+            height: "43px",
+            gap: "10px",
           }}
         >
-          <div>
-            <Title>Dashboard</Title>
-          </div>
-          <div className="flex items-center gap-3">
-            {canCreateCampaigns && (
-              <Button
-                onClick={() => setShowCreateWizard(true)}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+          <h1
+            style={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: "24px",
+              fontWeight: 600,
+              lineHeight: "28px",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            Dashboard
+          </h1>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              height: "43px",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              backgroundColor: "var(--color-white)",
+              boxShadow: "0px 1px 2px rgba(16, 24, 40, 0.05)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            <img
+              src="/icons/calendar-icon.svg"
+              alt=""
+              style={{ width: "13px", height: "15px" }}
+            />
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+            >
+              <span
+                style={{
+                  fontFamily: "Outfit, sans-serif",
+                  fontSize: "12px",
+                  fontWeight: 400,
+                  color: "var(--color-text-gray)",
+                }}
               >
-                + New Campaign
-              </Button>
-            )}
+                12 Jan 2024 - 13 Feb 2024
+              </span>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "4px" }}
+              >
+                <span
+                  style={{
+                    fontFamily: "Outfit, sans-serif",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: "var(--color-text-gray)",
+                  }}
+                >
+                  Last 28 Days
+                </span>
+                <img
+                  src="/icons/dropdown-arrow.svg"
+                  alt=""
+                  style={{ width: "10px", height: "6px" }}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
+        {!partner ? (
+          <Loading message="Loading your dashboard..." size="lg" />
+        ) : campaigns === undefined ? (
+          <Loading message="Loading your campaigns..." size="lg" />
+        ) : (
+          <>
+            {/* Wallet Balance Card - Full Width */}
+            <div style={{ width: "100%", height: "131px" }}>
+              <WalletBalanceCard wallet={wallet} />
+            </div>
+
+            {/* MEDIA MODE: Standard Layout */}
+            {isDashboardMediaMode && (
+              <>
+                {/* Row: SmallCardsGrid + UpcomingCampaigns */}
+                <div style={{ display: "flex", gap: "16px", width: "100%" }}>
+                  <div style={{ width: "956px", height: "194px" }}>
+                    <SmallCardsGrid />
+                  </div>
+                  <div style={{ flex: 1, minWidth: "300px", height: "194px" }}>
+                    <UpcomingCampaigns />
+                  </div>
+                </div>
+
+                {/* Row: LineChart + RecentActivity */}
+                <div style={{ display: "flex", gap: "16px", width: "100%" }}>
+                  <div style={{ width: "956px", height: "379px" }}>
+                    <LineChart />
+                  </div>
+                  <div style={{ flex: 1, minWidth: "300px", height: "379px" }}>
+                    <RecentActivity />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* BENEFICIARY MODE: 3:1 Grid Layout */}
+            {isDashboardBeneficiaryMode && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "956px 1fr",
+                  gap: "16px",
+                  width: "100%",
+                }}
+              >
+                {/* Left Column */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                  }}
+                >
+                  <div style={{ width: "100%", height: "194px" }}>
+                    <SmallCardsGrid />
+                  </div>
+                  <div style={{ width: "100%", height: "379px" }}>
+                    <LineChart />
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div style={{ minWidth: "300px", minHeight: "583px" }}>
+                  <RecentActivity />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Dialogs */}
         {showCreateWizard &&
           partner?._id &&
           canCreateCampaigns &&
@@ -226,91 +372,6 @@ export default function DashboardSection({
             />
           )}
 
-        {!partner ? (
-          <Loading message="Loading your dashboard..." size="lg" />
-        ) : campaignsLoading || revenueLoading ? (
-          <Loading message="Loading your campaigns..." size="lg" />
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "24px",
-              width: "100%",
-            }}
-          >
-            {/* Wallet Card (full width, height 131px → 12.8vh) */}
-            <div
-              style={{
-                width: "100%",
-                height: "max(12.8vh, 131px)",
-                overflow: "hidden",
-              }}
-            >
-              <WalletBalanceCard wallet={null} />
-            </div>
-
-            {/* Row: SmallCardsGrid (75.04% width) + UpcomingCampaigns (23.58% width) with responsive gap */}
-            <div
-              style={{
-                display: "flex",
-                gap: "max(1.1vw, 16px)",
-                width: "100%",
-              }}
-            >
-              <div
-                style={{
-                  width: "max(75.04%, 956px)",
-                  aspectRatio: "956/194",
-                  overflow: "hidden",
-                }}
-              >
-                <SmallCardsGrid />
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: "max(23.58%, 300px)",
-                  aspectRatio: "300/194",
-                  overflow: "hidden",
-                }}
-              >
-                <UpcomingCampaigns />
-              </div>
-            </div>
-
-            {/* Row: LineChart (75.04% width) + RecentActivity (23.58% width) with responsive gap */}
-            <div
-              style={{
-                display: "flex",
-                gap: "max(1.1vw, 16px)",
-                width: "100%",
-              }}
-            >
-              <div
-                style={{
-                  width: "max(75.04%, 956px)",
-                  aspectRatio: "956/379",
-                  overflow: "hidden",
-                }}
-              >
-                <LineChart />
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: "max(23.58%, 300px)",
-                  aspectRatio: "300/379",
-                  overflow: "hidden",
-                }}
-              >
-                <RecentActivity />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Create Program Dialog (Super Admin only) */}
         <CreateProgramDialog
           open={showCreateProgramDialog}
           onOpenChange={setShowCreateProgramDialog}

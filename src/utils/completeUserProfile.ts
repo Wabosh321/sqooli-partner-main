@@ -2,29 +2,12 @@ import { supabase } from "../lib/supabase";
 import type { RegisterFormData } from "../types/auth.types";
 
 /**
- * Map partner type to default user role within that partner
- */
-const getDefaultRoleForPartnerType = (partnerType?: string): string => {
-  switch (partnerType) {
-    case "affiliate":
-      return "affiliate_agent";
-    case "media":
-      return "media_manager";
-    case "corporate":
-      return "corporate_admin";
-    case "institutional":
-      return "hub_manager";
-    default:
-      return "member"; // Fallback role
-  }
-};
-
-/**
- * Complete user profile creation after email verification
- * Store registration data in sessionStorage during signup, then call this after verification
+ * Complete user profile creation after email verification (PHASE 1 REFACTOR)
+ * Calls atomic RPC: complete_onboarding_profile()
+ * Replaces multi-step user + partner creation with single transaction
  */
 export const completeUserProfile = async (
-  registrationData?: RegisterFormData
+  registrationData?: RegisterFormData,
 ): Promise<{ success: boolean; message: string; userId?: string }> => {
   try {
     // Get current authenticated user
@@ -57,68 +40,44 @@ export const completeUserProfile = async (
       return { success: false, message: "Missing registration data" };
     }
 
-    // Determine partner type and default role
-    const partnerType = regData.partnerType || "affiliate";
-    const defaultRole = getDefaultRoleForPartnerType(partnerType);
+    const partnerType = regData.partnerType || "beneficiary";
+    const fullName = `${regData.firstName.trim()} ${regData.lastName.trim()}`;
 
-    // Call the RPC function to create profile
-    const { data: profile, error: profileError } = await supabase
-      .rpc("create_user_profile", {
+    // PHASE 1: Call atomic RPC instead of multi-step operations
+    const { data: result, error: rpcError } = await supabase.rpc(
+      "complete_onboarding_profile",
+      {
         p_auth_id: user.id,
         p_email: user.email!,
-        p_full_name: `${regData.firstName.trim()} ${regData.lastName.trim()}`,
+        p_full_name: fullName,
         p_phone: regData.phoneNumber.trim(),
         p_username: regData.username.trim(),
-      })
-      .select()
-      .single();
+        p_partner_type: partnerType,
+      },
+    );
 
-    if (profileError) {
-      console.error("Failed to create profile:", profileError);
+    if (rpcError) {
+      console.error("Failed to complete onboarding:", rpcError);
       return {
         success: false,
-        message: profileError.message || "Profile creation failed",
+        message: rpcError.message || "Profile creation failed",
       };
     }
 
-    if (!profile || typeof profile !== "object" || !("id" in profile)) {
+    if (!result || typeof result !== "object") {
       return { success: false, message: "No profile returned" };
     }
 
-    const profileData = profile as { id: string };
+    const { user_id, partner_id } = result as {
+      user_id: string;
+      partner_id: string;
+    };
 
-    // Update user profile with partner_role and partner details
-    const { error: updateError } = await supabase
-      .from("users")
-      .update({
-        partner_role: defaultRole,
-        // Optional: add other partner-specific fields
-      })
-      .eq("id", profileData.id);
-
-    if (updateError) {
-      console.warn("Failed to update user role:", updateError);
-    }
-
-    // Create partner record with partner type
-    try {
-      const { error: partnerError } = await supabase.from("partners").insert({
-        user_id: profileData.id,
-        org_name: `${regData.firstName.trim()} ${regData.lastName.trim()}`,
-        org_email: user.email,
-        org_phone: regData.phoneNumber.trim(),
-        partner_type: partnerType, // Store partner type
-        // These will be NULL initially - can be set later
-        access_level: null,
-        commission_rate: null,
-      });
-
-      if (partnerError) {
-        console.warn("Failed to create partner record:", partnerError);
-      }
-    } catch (err) {
-      console.warn("Failed to create partner record:", err);
-      // Don't fail if partner creation fails - profile is created
+    if (!user_id || !partner_id) {
+      return {
+        success: false,
+        message: "Failed to create profile and partner",
+      };
     }
 
     // Clear stored registration data
@@ -127,7 +86,7 @@ export const completeUserProfile = async (
     return {
       success: true,
       message: "Profile created successfully!",
-      userId: profileData.id,
+      userId: user_id,
     };
   } catch (error) {
     console.error("Error completing profile:", error);

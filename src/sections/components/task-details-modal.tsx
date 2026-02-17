@@ -6,32 +6,13 @@ import {
   DialogContent,
   DialogHeader,
 } from "../../components/ui/dialog";
-
-interface TaskDetailsData {
-  id: string;
-  dateCreated: string;
-  referenceNo: string;
-  taskName: string;
-  campaignName?: string;
-  description?: string;
-  program?: string;
-  channel?: string;
-  subChannel?: string;
-  startDate?: string;
-  endDate?: string;
-  duration?: string;
-  createdBy?: string;
-  approver?: string;
-  dateCompleted?: string;
-  qrCode?: string;
-  promoCode?: string;
-}
+import { TaskDetails, TaskStatus } from "../../types/auth.types";
 
 interface TaskDetailsModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  task: TaskDetailsData | null;
-  taskStatus: "pending" | "approved" | "declined";
+  task: TaskDetails | null;
+  taskStatus: TaskStatus;
   canManageTasks: boolean;
   onApproveClick: () => void;
   onDeclineClick: () => void;
@@ -107,20 +88,20 @@ export default function TaskDetailsModal({
 
                   {/* Task Name */}
                   <h2 className="text-lg font-bold text-gray-900">
-                    {task.taskName}
+                    {task.task_name}
                   </h2>
 
                   {/* Info Fields */}
                   <div className="space-y-3 text-sm">
                     <div>
                       <p className="text-gray-600">Date Created:</p>
-                      <p className="text-gray-900">{task.dateCreated}</p>
+                      <p className="text-gray-900">{task.date_created}</p>
                     </div>
                     {taskStatus !== "pending" && (
                       <div>
                         <p className="text-gray-600">Date Completed:</p>
                         <p className="text-gray-900">
-                          {task.dateCompleted || task.dateCreated}
+                          {task.completed_at || task.date_created}
                         </p>
                       </div>
                     )}
@@ -178,7 +159,7 @@ export default function TaskDetailsModal({
                           Date Created:
                         </p>
                         <p className="text-sm text-gray-900">
-                          {task.dateCreated}
+                          {task.date_created}
                         </p>
                       </div>
                       <div>
@@ -194,7 +175,7 @@ export default function TaskDetailsModal({
                           Sub-Channel:
                         </p>
                         <p className="text-sm text-gray-900">
-                          {task.subChannel}
+                          {task.sub_channel}
                         </p>
                       </div>
                       <div>
@@ -202,12 +183,12 @@ export default function TaskDetailsModal({
                           Start Date:
                         </p>
                         <p className="text-sm text-gray-900">
-                          {task.startDate}
+                          {task.start_date}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600 mb-1">End Date:</p>
-                        <p className="text-sm text-gray-900">{task.endDate}</p>
+                        <p className="text-sm text-gray-900">{task.end_date}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600 mb-1">Duration:</p>
@@ -218,7 +199,7 @@ export default function TaskDetailsModal({
                           Created By:
                         </p>
                         <p className="text-sm text-gray-900">
-                          {task.createdBy}
+                          {task.created_by}
                         </p>
                       </div>
                       <div className="col-span-2">
@@ -237,7 +218,7 @@ export default function TaskDetailsModal({
                     <p className="text-sm text-gray-600">QR Code</p>
                     <div className="bg-black/10 w-32 h-32 rounded mt-4"></div>
                     <p className="text-xs text-gray-600 mt-4">
-                      Promocode: {task.promoCode}
+                      Promocode: {task.promo_code}
                     </p>
                   </div>
                 </div>

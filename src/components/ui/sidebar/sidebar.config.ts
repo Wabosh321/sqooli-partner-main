@@ -7,6 +7,8 @@ import {
   Settings,
   LayoutGrid,
   CheckSquare,
+  IdCard,
+  HandHeart,
 } from "lucide-react";
 
 export interface SidebarNavItem {
@@ -32,6 +34,18 @@ export const SIDEBAR_MENU: SidebarNavItem[] = [
     requiredCategory: "campaigns",
   },
   {
+    id: "beneficiaries",
+    label: "Beneficiaries",
+    icon: IdCard,
+    requiredCategory: "beneficiaries",
+  },
+  {
+    id: "sponsorships",
+    label: "Sponsorships",
+    icon: HandHeart,
+    requiredCategory: "sponsorships",
+  },
+  {
     id: "programs",
     label: "Programs",
     icon: LayoutGrid,
@@ -40,7 +54,6 @@ export const SIDEBAR_MENU: SidebarNavItem[] = [
   { id: "wallet", label: "Wallet", icon: Wallet, requiredCategory: "wallet" },
   { id: "tasks", label: "Tasks", icon: CheckSquare, requiredCategory: "tasks" },
   { id: "users", label: "Users", icon: Users, requiredCategory: "users" },
-
   {
     id: "settings",
     label: "Settings",

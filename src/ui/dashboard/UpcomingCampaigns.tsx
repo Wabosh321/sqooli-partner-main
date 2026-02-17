@@ -1,57 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Clock } from "lucide-react";
-import { supabase } from "../../lib/supabase";
-import { useAuth } from "../../hooks/useAuth";
+import { useUpcomingCampaigns } from "../../application/dashboard/useUpcomingCampaigns";
+
+function formatCampaignDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export default function UpcomingCampaigns() {
-  const { partner } = useAuth();
-  const [items, setItems] = useState<
-    { name: string; date: string; variant?: string }[]
-  >([]);
-
-  useEffect(() => {
-    const loadCampaigns = async () => {
-      try {
-        const partnerId = (partner as any)?.id || (partner as any)?._id;
-        if (!partnerId) {
-          setItems([]);
-          return;
-        }
-
-        const today = new Date().toISOString().split("T")[0];
-
-        // Fetch upcoming campaigns from Supabase
-        const { data: campaigns, error } = await supabase
-          .from("campaigns")
-          .select("id, name, duration_start")
-          .eq("partner_id", partnerId)
-          .gte("duration_start", today)
-          .order("duration_start", { ascending: true })
-          .limit(5);
-
-        if (error) throw error;
-
-        setItems(
-          (campaigns || []).map((c: any) => ({
-            name: c.name || "Untitled",
-            date: c.duration_start
-              ? new Date(c.duration_start).toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
-              : "TBD",
-            variant: "default",
-          })),
-        );
-      } catch (err) {
-        console.error("UpcomingCampaigns: error loading campaigns", err);
-        setItems([]);
-      }
-    };
-
-    loadCampaigns();
-  }, [partner]);
+  // Fetch upcoming campaigns using centralized hook
+  const { campaigns, isLoading, error } = useUpcomingCampaigns(undefined, 5);
 
   return (
     <div
@@ -75,13 +37,17 @@ export default function UpcomingCampaigns() {
 
       {/* Campaign List with fixed item heights */}
       <div className="relative flex-1 flex flex-col gap-2">
-        {items.length === 0 ? (
+        {isLoading ? (
+          <div className="text-sm text-gray-500">Loading campaigns...</div>
+        ) : error ? (
+          <div className="text-sm text-red-500">Error: {error.message}</div>
+        ) : campaigns && campaigns.length === 0 ? (
           <div className="text-sm text-gray-500">
             No upcoming campaigns found.
           </div>
         ) : (
           <>
-            {items.map((it, idx) => {
+            {campaigns?.map((campaign, idx) => {
               const bg =
                 idx === 0
                   ? "bg-white"
@@ -96,20 +62,22 @@ export default function UpcomingCampaigns() {
                     : "transparent";
               return (
                 <div
-                  key={idx}
+                  key={campaign.id}
                   className={`w-full h-[42px] rounded-lg px-3 flex items-center gap-2 ${bg}`}
                   style={{ borderLeft: `2px solid ${border}` }}
                 >
-                  <span className="text-[#667085] text-xs">{it.date}</span>
+                  <span className="text-[#667085] text-xs">
+                    {formatCampaignDate(campaign.start_date)}
+                  </span>
                   <span className="text-[#667085] text-xs">|</span>
                   <span className="text-[#101828] text-xs font-medium truncate">
-                    {it.name}
+                    {campaign.name}
                   </span>
                 </div>
               );
             })}
             {/* Partially visible placeholder if fewer than 3 items */}
-            {items.length < 3 && (
+            {campaigns && campaigns.length < 3 && (
               <div className="w-full h-[42px] rounded-lg bg-[#EEF6FC] px-3 flex items-center gap-2" />
             )}
           </>

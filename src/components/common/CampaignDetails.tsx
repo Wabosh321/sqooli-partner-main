@@ -1,25 +1,26 @@
-import { Dialog, DialogContent, DialogHeader } from "../ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+} from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { Copy, Trash2, MessageCircle, TrendingUp, X, Eye } from "lucide-react";
+import {
+  Copy,
+  Trash2,
+  MessageCircle,
+  TrendingUp,
+  X,
+  Eye,
+} from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { supabase } from "../../lib/supabase";
 import { ConfirmDialog } from "./ConfirmationDialog";
 import { CampaignAssets } from "./CampaignAssets";
 import { useState, useMemo, useEffect } from "react";
-import {
-  CartesianGrid,
-  Line,
-  LineChart as RechartsLineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { CartesianGrid, Line, LineChart as RechartsLineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
-import enrollmentsData from "../../auth/data/enrollments.json";
-import revenueData from "../../auth/data/revenue.json";
-import programsData from "../../auth/data/programs.json";
 
 interface CampaignDetailDialogProps {
   campaign: any | null;
@@ -41,38 +42,31 @@ export function CampaignDetailDialog({
   const [revenueLogs, setRevenueLogs] = useState<any[] | undefined>(undefined);
 
   useEffect(() => {
+    let mounted = true;
     if (!campaign) return;
-
-    try {
-      // Load enrollments from JSON
-      const campaignId = campaign.id || campaign._id;
-      const enrollmentsFiltered =
-        enrollmentsData.program_enrollments?.filter(
-          (e: any) => e.campaign_id === campaignId
-        ) || [];
-
-      // Load program from JSON
-      const programFiltered =
-        programsData.programs?.find((p: any) => p.id === campaign.program_id) ||
-        null;
-
-      // Load revenue logs from JSON
-      const revenueFiltered =
-        revenueData.partner_revenue?.filter(
-          (r: any) => r.campaign_id === campaignId
-        ) || [];
-
-      setEnrollments(enrollmentsFiltered);
-      setProgram(programFiltered);
-      setRevenueLogs(revenueFiltered);
-    } catch (err) {
-      console.error("Failed to load campaign details", err);
-      setEnrollments([]);
-      setProgram(null);
-      setRevenueLogs([]);
-    }
+    (async () => {
+      try {
+        const { data: eData, error: eErr } = await supabase.from('program_enrollments').select('*').eq('campaign_id', campaign.id || campaign._id);
+        if (eErr) throw eErr;
+        const { data: pData, error: pErr } = await supabase.from('programs').select('*').eq('id', campaign.program_id).limit(1).maybeSingle();
+        if (pErr) throw pErr;
+        const { data: rData, error: rErr } = await supabase.from('partner_revenue').select('*').eq('campaign_id', campaign.id || campaign._id);
+        if (rErr) throw rErr;
+        if (!mounted) return;
+        setEnrollments(eData || []);
+        setProgram(pData || null);
+        setRevenueLogs(rData || []);
+      } catch (err) {
+        console.error('Failed to load campaign details', err);
+        if (!mounted) return;
+        setEnrollments([]);
+        setProgram(null);
+        setRevenueLogs([]);
+      }
+    })();
+    return () => { mounted = false; };
   }, [campaign]);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showConfirm,setShowConfirm] = useState(false);
   const [showAssets, setShowAssets] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -81,13 +75,13 @@ export function CampaignDetailDialog({
     if (!revenueLogs || revenueLogs.length === 0) return [];
 
     const revenueByDate: Record<string, number> = {};
-
+    
     revenueLogs.forEach((log) => {
-      const date = new Date(log.split_timestamp).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
+      const date = new Date(log.split_timestamp).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
       });
-
+      
       revenueByDate[date] = (revenueByDate[date] || 0) + log.amount;
     });
 
@@ -95,8 +89,8 @@ export function CampaignDetailDialog({
     return Object.entries(revenueByDate)
       .map(([date, amount]) => ({ date, amount }))
       .sort((a, b) => {
-        const dateA = new Date(a.date + " 2024");
-        const dateB = new Date(b.date + " 2024");
+        const dateA = new Date(a.date + ' 2024');
+        const dateB = new Date(b.date + ' 2024');
         return dateA.getTime() - dateB.getTime();
       });
   }, [revenueLogs]);
@@ -110,18 +104,18 @@ export function CampaignDetailDialog({
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
+    return date.toLocaleDateString('en-US', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
     });
   };
 
   const formatCurrency = (amount: number) => {
-    return `KES ${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `KES ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const calculateDaysToExpiry = (endDate: string) => {
@@ -129,7 +123,7 @@ export function CampaignDetailDialog({
     const today = new Date();
     const diffTime = end.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+    
     if (diffDays < 0) return 0;
     return diffDays;
   };
@@ -137,29 +131,24 @@ export function CampaignDetailDialog({
   const calculateGrowthPercentage = () => {
     // Calculate actual vs target percentage
     const actualSignups = enrollments?.length;
-    const targetSignups = campaign?.target_signups ?? 0;
-
+    const targetSignups = campaign.target_signups;
+    
     if (targetSignups === 0) return 0;
-    return Math.round(
-      (!actualSignups ? 0 : actualSignups / targetSignups) * 100
-    );
+    return Math.round((!actualSignups ? 0 : actualSignups / targetSignups) * 100);
   };
 
   const handleShareWhatsApp = () => {
     const message = encodeURIComponent(
-      `Check out ${campaign?.name}! Use promo code: ${campaign?.promo_code}\n\n` +
-        `Get ${campaign?.bundled_offers?.min_lessons ?? 10} lessons for only ${formatCurrency(campaign?.bundled_offers?.total_price ?? 0)}!`
+      `Check out ${campaign.name}! Use promo code: ${campaign.promo_code}\n\n` +
+      `Get ${campaign.bundled_offers.min_lessons} lessons for only ${formatCurrency(campaign.bundled_offers.total_price)}!`
     );
-    window.open(
-      `https://wa.me/${campaign?.whatsapp_number}?text=${message}`,
-      "_blank"
-    );
+    window.open(`https://wa.me/${campaign.whatsapp_number}?text=${message}`, '_blank');
   };
 
   const handleCopy = () => {
     const promoCode = campaign.promo_code || "";
     if (onCopy) {
-      toast.success("Promo code copied to clipboard");
+      toast.success('Promo code copied to clipboard');
       onCopy(promoCode);
     } else {
       navigator.clipboard.writeText(promoCode);
@@ -167,18 +156,15 @@ export function CampaignDetailDialog({
   };
 
   const handleDelete = async () => {
-    try {
-      setLoading(true);
-      // Simulate delete by showing success message
-      // In a real app, this would update campaigns.json
-      toast.success("Campaign deleted successfully");
-      setShowConfirm(false);
-      onClose();
-    } catch (err) {
-      console.log(err);
-      toast.error("Failed to delete campaign");
-    } finally {
-      setLoading(false);
+    try{
+      const { error } = await supabase.from('campaigns').update({ status: 'expired' }).eq('id', campaign._id || campaign.id);
+      if (error) throw error;
+        setShowConfirm(false)
+        onClose()
+    } catch(err){
+        console.log(err)
+    } finally{
+        setLoading(false)
     }
   };
 
@@ -187,37 +173,24 @@ export function CampaignDetailDialog({
   };
 
   // Calculate actual partner earnings based on revenue share
-  const partnerPercentage = campaign?.revenue_share?.partner_percentage ?? 60;
-  const partnerEarnings =
-    (campaign?.revenue_projection ?? 0) * (partnerPercentage / 100);
-
+  const partnerEarnings = campaign.revenue_projection * (campaign.revenue_share.partner_percentage / 100);
+  
   // Actual engagements from enrollments
   const actualEngagements = enrollments?.length ?? 0;
-
+  
   // Calculate actual revenue based on enrollments
-  const bundledOfferPrice = campaign?.bundled_offers?.total_price ?? 0;
-  const actualRevenue =
-    (enrollments?.filter((e: any) => e.status === "redeemed").length ?? 0) *
-    bundledOfferPrice;
-  const actualPartnerEarnings = actualRevenue * (partnerPercentage / 100);
+  const actualRevenue = (enrollments?.filter(e => e.status === "redeemed").length ?? 0) * campaign.bundled_offers.total_price;
+  const actualPartnerEarnings = actualRevenue * (campaign.revenue_share.partner_percentage / 100);
 
   return (
     <>
-      <Dialog
-        open={open && !showAssets}
-        onOpenChange={(isOpen) => !isOpen && onClose()}
-      >
-        <DialogContent
-          className="!max-w-5xl sm:!max-w-5xl max-h-[90vh] overflow-y-auto p-0"
-          showCloseButton={false}
-        >
+      <Dialog open={open && !showAssets} onOpenChange={(isOpen) => !isOpen && onClose()}>
+        <DialogContent className="!max-w-5xl sm:!max-w-5xl max-h-[90vh] overflow-y-auto p-0" showCloseButton={false}>
           <DialogHeader className="flex flex-row items-start justify-between px-6 pt-6 pb-0">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Campaigns</span>
               <span>/</span>
-              <span className="text-foreground font-medium">
-                {campaign.name}
-              </span>
+              <span className="text-foreground font-medium">{campaign.name}</span>
             </div>
             <Button
               variant="ghost"
@@ -233,16 +206,12 @@ export function CampaignDetailDialog({
             {/* LEFT - Campaign Info Card */}
             <div className="md:col-span-1 h-fit">
               <div className="rounded-lg p-6 h-full border border-muted shadow bg-card">
-                <h2 className="text-2xl font-bold text-foreground mb-4">
-                  {campaign.name}
-                </h2>
-
+                <h2 className="text-2xl font-bold text-foreground mb-4">{campaign.name}</h2>
+                
                 <div className="space-y-4 text-sm">
                   {/* Promo Code */}
                   <div>
-                    <div className="text-muted-foreground mb-1">
-                      Promo Code:
-                    </div>
+                    <div className="text-muted-foreground mb-1">Promo Code:</div>
                     <div className="font-mono font-semibold text-foreground text-lg">
                       {campaign.promo_code}
                     </div>
@@ -250,9 +219,7 @@ export function CampaignDetailDialog({
 
                   {/* Date Created */}
                   <div>
-                    <div className="text-muted-foreground mb-1">
-                      Date Created:
-                    </div>
+                    <div className="text-muted-foreground mb-1">Date Created:</div>
                     <div className="font-semibold text-foreground">
                       {formatDate(campaign.duration_start)}
                     </div>
@@ -260,9 +227,7 @@ export function CampaignDetailDialog({
 
                   {/* Created By */}
                   <div>
-                    <div className="text-muted-foreground mb-1">
-                      Created By:
-                    </div>
+                    <div className="text-muted-foreground mb-1">Created By:</div>
                     <div className="font-semibold text-foreground">
                       {partner?.name || "Loading..."}
                     </div>
@@ -270,38 +235,25 @@ export function CampaignDetailDialog({
 
                   {/* Duration */}
                   <div>
-                    <div className="text-muted-foreground mb-1">
-                      Campaign Duration:
-                    </div>
+                    <div className="text-muted-foreground mb-1">Campaign Duration:</div>
                     <div className="font-semibold text-foreground">
-                      {new Date(campaign.duration_start).toLocaleDateString(
-                        "en-US",
-                        { month: "short", day: "numeric" }
-                      )}
-                      {" - "}
-                      {new Date(campaign.duration_end).toLocaleDateString(
-                        "en-US",
-                        { month: "short", day: "numeric", year: "numeric" }
-                      )}
+                      {new Date(campaign.duration_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {' - '}
+                      {new Date(campaign.duration_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </div>
                   </div>
 
                   {/* Expiry */}
                   <div>
-                    <div className="text-muted-foreground mb-1">
-                      Expiry (days):
-                    </div>
+                    <div className="text-muted-foreground mb-1">Expiry (days):</div>
                     <div className="font-semibold text-foreground">
-                      {calculateDaysToExpiry(campaign.duration_end)} days
-                      remaining
+                      {calculateDaysToExpiry(campaign.duration_end)} days remaining
                     </div>
                   </div>
 
                   {/* Daily Target */}
                   <div>
-                    <div className="text-muted-foreground mb-1">
-                      Daily Target:
-                    </div>
+                    <div className="text-muted-foreground mb-1">Daily Target:</div>
                     <div className="font-semibold text-foreground">
                       {campaign.daily_target} signups/day
                     </div>
@@ -309,42 +261,26 @@ export function CampaignDetailDialog({
 
                   {/* Bundle Offer */}
                   <div>
-                    <div className="text-muted-foreground mb-1">
-                      Bundle Offer:
-                    </div>
+                    <div className="text-muted-foreground mb-1">Bundle Offer:</div>
                     <div className="font-semibold text-foreground">
-                      {campaign?.bundled_offers?.min_lessons ?? 10} lessons @{" "}
-                      {formatCurrency(
-                        campaign?.bundled_offers?.total_price ?? 0
-                      )}
+                      {campaign.bundled_offers.min_lessons} lessons @ {formatCurrency(campaign.bundled_offers.total_price)}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      (
-                      {formatCurrency(
-                        campaign?.discount_rule?.price_per_lesson ?? 0
-                      )}{" "}
-                      per lesson)
+                      ({formatCurrency(campaign.discount_rule.price_per_lesson)} per lesson)
                     </div>
                   </div>
 
                   {/* Revenue Share */}
                   <div>
-                    <div className="text-muted-foreground mb-1">
-                      Revenue Share:
-                    </div>
+                    <div className="text-muted-foreground mb-1">Revenue Share:</div>
                     <div className="font-semibold text-foreground">
-                      Partner:{" "}
-                      {campaign?.revenue_share?.partner_percentage ?? 60}% |
-                      Sqooli: {campaign?.revenue_share?.sqooli_percentage ?? 40}
-                      %
+                      Partner: {campaign.revenue_share.partner_percentage}% | Sqooli: {campaign.revenue_share.sqooli_percentage}%
                     </div>
                   </div>
 
                   {/* WhatsApp */}
                   <div>
-                    <div className="text-muted-foreground mb-1">
-                      WhatsApp Contact:
-                    </div>
+                    <div className="text-muted-foreground mb-1">WhatsApp Contact:</div>
                     <div className="font-semibold text-foreground">
                       {campaign.whatsapp_number}
                     </div>
@@ -353,14 +289,8 @@ export function CampaignDetailDialog({
                   {/* Status */}
                   <div>
                     <div className="text-muted-foreground mb-1">Status:</div>
-                    <Badge
-                      variant={
-                        campaign.status === "active"
-                          ? "default"
-                          : campaign.status === "draft"
-                            ? "secondary"
-                            : "outline"
-                      }
+                    <Badge 
+                      variant={campaign.status === "active" ? "default" : campaign.status === "draft" ? "secondary" : "outline"}
                       className="capitalize"
                     >
                       {campaign.status}
@@ -397,28 +327,29 @@ export function CampaignDetailDialog({
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
-                  {campaign.status === "active" ||
-                  campaign.status === "draft" ? (
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="h-9 w-9"
-                      onClick={() => setShowConfirm(true)}
-                      title="Delete campaign"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <p className="text-xs text-destructive">Expired</p>
+                  {campaign.status === "active" || campaign.status === "draft" ? (
+                      
+                
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={()=>setShowConfirm(true)}
+                    title="Delete campaign"
+                  >
+                    <Trash2 className="h-4 w-4" /> 
+                  </Button> 
+                  ):( 
+                  <p className="text-xs text-destructive">Expired</p>
                   )}
                   <ConfirmDialog
-                    open={showConfirm}
-                    onOpenChange={setShowConfirm}
-                    title="Mark Campaign as expired"
-                    description="Are you sure you want to mark this campaign as expired? This action cannot be undone."
-                    confirmLabel="Yes, Mark as expired"
-                    onConfirm={handleDelete}
-                    loading={loading}
+                      open= {showConfirm}
+                      onOpenChange={setShowConfirm}
+                      title="Mark Campaign as expired"
+                      description="Are you sure you want to mark this campaign as expired? This action cannot be undone."
+                      confirmLabel="Yes, Mark as expired"
+                      onConfirm={handleDelete}
+                      loading={loading}
                   />
                 </div>
 
@@ -443,9 +374,7 @@ export function CampaignDetailDialog({
                   <CardContent className="pt-6 pb-6">
                     <div className="flex items-start gap-2 mb-2">
                       <TrendingUp className="h-4 w-4 text-chart-3 mt-1" />
-                      <div className="text-sm text-muted-foreground">
-                        Projected Earnings
-                      </div>
+                      <div className="text-sm text-muted-foreground">Projected Earnings</div>
                     </div>
                     <div className="text-3xl font-bold text-foreground mb-1">
                       {formatCurrency(partnerEarnings)}
@@ -463,18 +392,15 @@ export function CampaignDetailDialog({
                 {/* Engagements - Actual vs Target */}
                 <Card className="border border-muted">
                   <CardContent className="pt-6 pb-6">
-                    <div className="text-sm text-muted-foreground mb-2">
-                      Engagements
-                    </div>
+                    <div className="text-sm text-muted-foreground mb-2">Engagements</div>
                     <div className="text-3xl font-bold text-foreground mb-1">
-                      {actualEngagements >= 1000
-                        ? `${(actualEngagements / 1000).toFixed(1)}K`
+                      {actualEngagements >= 1000 
+                        ? `${(actualEngagements / 1000).toFixed(1)}K` 
                         : actualEngagements}
                     </div>
                     <div className="text-xs text-muted-foreground mb-2">
-                      Target:{" "}
-                      {campaign.target_signups >= 1000
-                        ? `${(campaign.target_signups / 1000).toFixed(0)}K`
+                      Target: {campaign.target_signups >= 1000 
+                        ? `${(campaign.target_signups / 1000).toFixed(0)}K` 
                         : campaign.target_signups}
                     </div>
                     <div className="flex items-center gap-1 text-sm text-chart-2">
@@ -489,9 +415,7 @@ export function CampaignDetailDialog({
               <div className="grid grid-cols-3 gap-4">
                 <Card className="border border-muted">
                   <CardContent className="pt-4 pb-4">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Total Revenue
-                    </div>
+                    <div className="text-xs text-muted-foreground mb-1">Total Revenue</div>
                     <div className="text-lg font-bold text-foreground">
                       {formatCurrency(campaign.revenue_projection)}
                     </div>
@@ -500,105 +424,83 @@ export function CampaignDetailDialog({
 
                 <Card className="border border-muted">
                   <CardContent className="pt-4 pb-4">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Redeemed
-                    </div>
+                    <div className="text-xs text-muted-foreground mb-1">Redeemed</div>
                     <div className="text-lg font-bold text-foreground">
-                      {
-                        enrollments?.filter((e) => e.status === "redeemed")
-                          .length
-                      }
+                      {enrollments?.filter(e => e.status === "redeemed").length}
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card className="border border-muted">
                   <CardContent className="pt-4 pb-4">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Pending
-                    </div>
+                    <div className="text-xs text-muted-foreground mb-1">Pending</div>
                     <div className="text-lg font-bold text-foreground">
-                      {
-                        enrollments?.filter((e) => e.status === "pending")
-                          .length
-                      }
+                      {enrollments?.filter(e => e.status === "pending").length}
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Chart Card */}
-              <Card className="flex-1 border border-muted">
-                <CardContent className="pt-6 pb-6">
-                  <div className="flex items-start justify-between mb-6">
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Cumulative Earnings
-                      </div>
-                      <div className="text-xl font-bold text-foreground">
-                        {formatCurrency(cumulativeEarnings)}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Total Transactions
-                      </div>
-                      <div className="text-xl font-bold text-foreground">
-                        {revenueLogs?.length || 0}
-                      </div>
+            {/* Chart Card */}
+            <Card className="flex-1 border border-muted">
+              <CardContent className="pt-6 pb-6">
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Cumulative Earnings</div>
+                    <div className="text-xl font-bold text-foreground">
+                      {formatCurrency(cumulativeEarnings)}
                     </div>
                   </div>
+                  <div className="text-right">
+                    <div className="text-sm text-muted-foreground mb-1">Total Transactions</div>
+                    <div className="text-xl font-bold text-foreground">
+                      {revenueLogs?.length || 0}
+                    </div>
+                  </div>
+                </div>
 
-                  {chartData.length > 0 ? (
-                    <div className="h-48 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RechartsLineChart data={chartData}>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            className="stroke-muted"
-                          />
-                          <XAxis
-                            dataKey="date"
-                            className="text-xs"
-                            tick={{ fill: "hsl(var(--muted-foreground))" }}
-                          />
-                          <YAxis
-                            className="text-xs"
-                            tick={{ fill: "hsl(var(--muted-foreground))" }}
-                            tickFormatter={(value) => `${value}`}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "6px",
-                            }}
-                            labelStyle={{ color: "hsl(var(--foreground))" }}
-                            formatter={(value: number) => [
-                              formatCurrency(value),
-                              "Earnings",
-                            ]}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="amount"
-                            stroke="hsl(var(--chart-1))"
-                            strokeWidth={3}
-                            dot={{ fill: "hsl(var(--chart-1))", r: 4 }}
-                            activeDot={{ r: 6 }}
-                          />
-                        </RechartsLineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <div className="h-48 w-full flex items-center justify-center border border-dashed border-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        No earnings data yet
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                {chartData.length > 0 ? (
+                  <div className="h-48 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsLineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis 
+                          dataKey="date" 
+                          className="text-xs"
+                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                        />
+                        <YAxis 
+                          className="text-xs"
+                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                          tickFormatter={(value) => `${value}`}
+                        />
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '6px',
+                          }}
+                          labelStyle={{ color: 'hsl(var(--foreground))' }}
+                          formatter={(value: number) => [formatCurrency(value), 'Earnings']}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="amount"
+                          stroke="hsl(var(--chart-1))"
+                          strokeWidth={3}
+                          dot={{ fill: 'hsl(var(--chart-1))', r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-48 w-full flex items-center justify-center border border-dashed border-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">No earnings data yet</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
             </div>
           </div>
         </DialogContent>

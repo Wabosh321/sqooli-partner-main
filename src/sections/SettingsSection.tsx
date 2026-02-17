@@ -104,7 +104,7 @@ export default function SettingsSection() {
 
   return (
     <div style={getSectionContainerStyle(padding)}>
-      <div className="mx-auto space-y-6" style={{ width: "max(88.33vw, 1272px)", maxWidth: "100%" }}>
+      <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
            <Title>Settings</Title>

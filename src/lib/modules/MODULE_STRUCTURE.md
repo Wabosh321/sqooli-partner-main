@@ -5,7 +5,7 @@ The `supabaseCRUD.ts` has been successfully modularized into **12 separate, focu
 
 ## Module Directory Structure
 
-```
+\`\`\`
 src/lib/
 ├── supabaseCRUD.ts (Main Facade - re-exports all modules)
 └── modules/
@@ -25,7 +25,7 @@ src/lib/
     ├── analyticsCRUD.ts        # Analytics & Revenue operations
     ├── permissionsCRUD.ts      # Permissions & Access Control operations
     └── auditCRUD.ts            # Activity Logs & Audit operations
-```
+\`\`\`
 
 ## Module Descriptions
 
@@ -120,7 +120,7 @@ Activity logs and audit trail.
 
 The main facade re-exports all functions from individual modules for backward compatibility:
 
-```typescript
+\`\`\`typescript
 // All exports available for direct access
 export { listTable, getById, insertRow, ... } from './modules/genericHelpers';
 export { findByConvexId, upsertWithConvexId, ... } from './modules/convexIdSupport';
@@ -128,7 +128,7 @@ export { findByConvexId, upsertWithConvexId, ... } from './modules/convexIdSuppo
 
 // Plus default export containing all functions
 export default { listTable, getById, ... }
-```
+\`\`\`
 
 ## Benefits
 
@@ -148,7 +148,7 @@ All modules use:
 
 ## Import Examples
 
-```typescript
+\`\`\`typescript
 // Option 1: Direct module imports (recommended)
 import { listUsers, createUser } from '@/lib/modules/usersCRUD';
 
@@ -158,7 +158,7 @@ import { listUsers, createUser } from '@/lib/supabaseCRUD';
 // Option 3: Default export
 import supabase from '@/lib/supabaseCRUD';
 const users = await supabase.listUsers();
-```
+\`\`\`
 
 ## No Breaking Changes
 

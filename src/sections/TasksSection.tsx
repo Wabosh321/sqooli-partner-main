@@ -1,62 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { AlertCircle, Lock } from "lucide-react";
 import { Card, CardContent } from "../components/ui/card";
 import { useAuth } from "../hooks/useAuth";
 import { usePermissions } from "../hooks/usePermission";
 import { usePartnerAccess } from "../hooks/usePartnerAccess";
-import { useUserHierarchy } from "../hooks/useUserHierarchy";
-import { useUserCampaigns } from "../hooks/useUserCampaigns";
+import { useDeviceSize } from "../hooks/useDeviceSize";
 import {
-  DASHBOARD_SECTION_CONFIG,
   getResponsivePadding,
   getSectionContainerStyle,
 } from "./SettingsSection";
-import { useDeviceSize } from "../hooks/useDeviceSize";
-import ConfirmActionModal from "./components/confirm-action-modal";
-import TaskDetailsModal from "./components/task-details-modal";
 import { TasksTable } from "./components/tasks-table";
+import TaskDetailsModal from "./components/task-details-modal";
+import ConfirmActionModal from "./components/confirm-action-modal";
 import { toast } from "sonner";
-
-// PHASE 4: Supabase integration for tasks
-import { TaskService } from "../infrastructure/task/task.service";
-import { CampaignService } from "../infrastructure/campaign/campaign.service";
-
-interface Task {
-  id: string;
-  campaignId: string;
-  dateCreated: string;
-  referenceNo: string;
-  taskName: string;
-  status?: "pending" | "approved" | "declined";
-}
-
-interface TaskDetails extends Task {
-  campaignName?: string;
-  description?: string;
-  program?: string;
-  channel?: string;
-  subChannel?: string;
-  startDate?: string;
-  endDate?: string;
-  duration?: string;
-  createdBy?: string;
-  approver?: string;
-  dateCompleted?: string;
-  qrCode?: string;
-  promoCode?: string;
-}
+import { supabase } from "../lib/supabase";
+import { Task, TaskStatus, TaskDetails } from "../types/auth.types";
+import type { Database } from "../types/database.types";
 
 export default function TasksSection() {
   const { user } = useAuth();
-  const { isMobile, isTablet, isDesktop, width, height } = useDeviceSize();
+  const { isMobile, isTablet } = useDeviceSize();
   const padding = getResponsivePadding(isMobile, isTablet);
   const { canRead, canWrite } = usePermissions();
   const { canAccessSection, partnerType } = usePartnerAccess();
-  const { userIds } = useUserHierarchy();
-  const { campaigns: userCampaigns, loading: campaignsLoading } =
-    useUserCampaigns();
 
   // Permission checks
   const canViewTasks = canRead("tasks");
@@ -70,17 +38,15 @@ export default function TasksSection() {
     "approve",
   );
   const [selectedTask, setSelectedTask] = useState<TaskDetails | null>(null);
-  const [taskStatus, setTaskStatus] = useState<
-    "pending" | "approved" | "declined"
-  >("pending");
+  const [taskStatus, setTaskStatus] = useState<TaskStatus>("pending");
   const [reasonText, setReasonText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
 
-  // PHASE 4: Load tasks from Supabase and subscribe to real-time changes
+  // Fetch tasks from Supabase for the partner
   useEffect(() => {
-    if (!userCampaigns || userCampaigns.length === 0) {
+    if (!user || !canViewTasks) {
       setTasksLoading(false);
       return;
     }
@@ -88,24 +54,43 @@ export default function TasksSection() {
     const loadTasks = async () => {
       try {
         setTasksLoading(true);
-        // Load tasks for all user's campaigns
-        const allTasks: any[] = [];
-        for (const campaign of userCampaigns) {
-          const campaignTasks = await TaskService.fetchTasks(campaign.id);
-          allTasks.push(...campaignTasks);
+        // Fetch partner info from auth hook context (should be available in parent)
+        // For now, fetch tasks for all campaigns belonging to this partner
+        const { data: tasksData, error } = await supabase
+          .from("tasks")
+          .select(
+            `
+            *,
+            campaigns(name, description, start_date, end_date, duration_start, duration_end, promo_code, program_id)
+          `,
+          )
+          .order("date_created", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching tasks:", error);
+          toast.error("Failed to load tasks");
+          return;
         }
 
-        const mapped = (allTasks || []).map((t) => ({
-          ...t,
+        const mappedTasks: Task[] = (tasksData || []).map((t: any) => ({
           id: t.id,
-          campaignId: t.campaign_id,
-          dateCreated: t.created_at,
-          referenceNo: t.reference_no,
-          taskName: t.task_name,
-          status: t.status as "pending" | "approved" | "declined",
+          campaign_id: t.campaign_id,
+          created_by_user_id: t.created_by_user_id,
+          approver_id: t.approver_id,
+          task_name: t.task_name,
+          status: t.status as TaskStatus,
+          reference_no: t.reference_no,
+          description: t.description,
+          channel: t.channel,
+          sub_channel: t.sub_channel,
+          date_created: t.date_created,
+          completed_at: t.completed_at,
+          created_at: t.created_at,
+          updated_at: t.updated_at,
+          partner_id: t.partner_id,
         }));
 
-        setTasks(mapped);
+        setTasks(mappedTasks);
       } catch (err) {
         console.error("Error loading tasks:", err);
         toast.error("Failed to load tasks");
@@ -116,50 +101,32 @@ export default function TasksSection() {
 
     loadTasks();
 
-    // PHASE 4: Subscribe to task changes for each campaign
-    const unsubscribers: Array<() => void> = [];
-    for (const campaign of userCampaigns) {
-      const unsubscribe = TaskService.subscribeToTaskChanges(
-        campaign.id,
-        (updatedTask) => {
-          setTasks((prev) => {
-            const existing = prev.findIndex((t) => t.id === updatedTask.id);
-            if (existing >= 0) {
-              const updated = [...prev];
-              updated[existing] = {
-                ...updatedTask,
-                campaignId: updatedTask.campaign_id,
-                dateCreated: updatedTask.created_at,
-                referenceNo: updatedTask.reference_no,
-                taskName: updatedTask.task_name,
-                status: updatedTask.status,
-              };
-              return updated;
-            }
-            return [
-              ...prev,
-              {
-                ...updatedTask,
-                campaignId: updatedTask.campaign_id,
-                dateCreated: updatedTask.created_at,
-                referenceNo: updatedTask.reference_no,
-                taskName: updatedTask.task_name,
-                status: updatedTask.status,
-              },
-            ];
-          });
+    // Subscribe to real-time task changes
+    const subscription = supabase
+      .channel("tasks_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tasks" },
+        (payload: any) => {
+          if (payload.eventType === "INSERT") {
+            setTasks((prev) => [payload.new as Task, ...prev]);
+          } else if (payload.eventType === "UPDATE") {
+            setTasks((prev) =>
+              prev.map((t) =>
+                t.id === (payload.new as Task).id ? (payload.new as Task) : t,
+              ),
+            );
+          } else if (payload.eventType === "DELETE") {
+            setTasks((prev) => prev.filter((t) => t.id !== payload.old.id));
+          }
         },
-      );
-      unsubscribers.push(unsubscribe);
-    }
+      )
+      .subscribe();
 
     return () => {
-      unsubscribers.forEach((u) => u());
+      subscription.unsubscribe();
     };
-  }, [userCampaigns]);
-
-  // Calculate responsive dimensions
-  // (Removed - using standard max-w-7xl layout instead)
+  }, [user, canViewTasks]);
 
   // Permission guard
   if (!canAccessSection("tasks") && partnerType) {
@@ -210,41 +177,23 @@ export default function TasksSection() {
     );
   }
 
+  // Handle view task
   const handleViewTask = (taskId: string) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    const campaign = campaignsData.campaigns.find(
-      (c) => c.id === task.campaignId,
-    );
-    if (campaign) {
-      const details: TaskDetails = {
-        id: task.id,
-        campaignId: task.campaignId,
-        dateCreated: task.dateCreated,
-        referenceNo: task.referenceNo,
-        taskName: task.taskName,
-        status: task.status as any,
-        campaignName: campaign.name,
-        description: campaign.name || "",
-        program: campaign.program_id,
-        channel: "Marketing",
-        subChannel: "Digital",
-        startDate: new Date(campaign.duration_start).toLocaleString(),
-        endDate: new Date(campaign.duration_end).toLocaleString(),
-        duration: campaign.promo_code || "N/A",
-        createdBy: "System",
-        approver: user?.email || "Admin",
-        promoCode: campaign.promo_code,
-      };
-      setSelectedTask(details);
-    } else {
-      setSelectedTask(task as any);
-    }
-    setTaskStatus((task.status as any) || "pending");
+    const details: TaskDetails = {
+      ...task,
+      campaignName: task.task_name,
+      campaign_description: task.description || undefined,
+    };
+
+    setSelectedTask(details);
+    setTaskStatus(task.status);
     setIsDetailsOpen(true);
   };
 
+  // Handle approve/decline actions
   const handleApproveClick = () => {
     setConfirmAction("approve");
     setIsConfirmOpen(true);
@@ -256,65 +205,71 @@ export default function TasksSection() {
     setIsConfirmOpen(true);
   };
 
-  // PHASE 4: Handle task approval/rejection via RPC
+  // Handle confirm action (approve/decline)
   const handleConfirmAction = async () => {
     if (!selectedTask || !user) return;
 
     try {
       const userId = user.id || (user as any)._id;
+      const newStatus: TaskStatus =
+        confirmAction === "approve" ? "approved" : "declined";
 
-      if (confirmAction === "approve") {
-        const result = await TaskService.approveTask({
-          taskId: selectedTask.id,
-          approverUserId: userId,
-          notes: reasonText,
-        });
+      // Update task in Supabase
+      const updateData = {
+        status: newStatus,
+        approver_id: userId,
+        completed_at:
+          newStatus === "approved" || newStatus === "declined"
+            ? new Date().toISOString()
+            : null,
+      };
 
-        if (result.success) {
-          toast.success("Task approved successfully");
-          setTaskStatus("approved");
-          // Remove from pending, add to complete
-          setTasks((prev) =>
-            prev.map((t) =>
-              t.id === selectedTask.id ? { ...t, status: "approved" } : t,
-            ),
-          );
-        } else {
-          toast.error(result.error || "Failed to approve task");
-        }
-      } else {
-        const result = await TaskService.rejectTask({
-          taskId: selectedTask.id,
-          approverUserId: userId,
-          reason: reasonText,
-        });
+      const { error } = await (supabase as any)
+        .from("tasks")
+        .update(updateData)
+        .eq("id", selectedTask.id);
 
-        if (result.success) {
-          toast.success("Task rejected successfully");
-          setTaskStatus("declined");
-          setTasks((prev) =>
-            prev.map((t) =>
-              t.id === selectedTask.id ? { ...t, status: "declined" } : t,
-            ),
-          );
-        } else {
-          toast.error(result.error || "Failed to reject task");
-        }
+      if (error) {
+        toast.error(`Failed to ${confirmAction} task`);
+        return;
       }
+
+      toast.success(`Task ${confirmAction}ed successfully`);
+      setTaskStatus(newStatus);
+
+      // Update local state
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === selectedTask.id ? { ...t, status: newStatus } : t,
+        ),
+      );
     } catch (err) {
       console.error("Error processing task action:", err);
       toast.error("An error occurred while processing your request");
     }
 
     setIsConfirmOpen(false);
+    setIsDetailsOpen(false);
   };
 
+  // Filter tasks by tab
   const displayTasks = tasks.filter((task) => {
     if (activeTab === "pending") {
       return task.status === "pending";
     }
     return task.status === "approved" || task.status === "declined";
   });
+
+  if (tasksLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p className="mt-4 text-muted-foreground">Loading tasks...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={getSectionContainerStyle(padding)}>
@@ -362,8 +317,17 @@ export default function TasksSection() {
           </button>
         </div>
 
-        {/* Tasks Table Component */}
-        <div>
+        {/* Tasks Table */}
+        {displayTasks.length === 0 ? (
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-center text-muted-foreground">
+                No {activeTab === "pending" ? "pending" : "completed"} tasks
+                found.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
           <TasksTable
             tasks={displayTasks}
             currentPage={currentPage}
@@ -371,10 +335,10 @@ export default function TasksSection() {
             onViewTask={handleViewTask}
             mode={activeTab}
           />
-        </div>
+        )}
       </div>
 
-      {/* Task Details Modal Component */}
+      {/* Task Details Modal */}
       <TaskDetailsModal
         isOpen={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}
@@ -385,12 +349,12 @@ export default function TasksSection() {
         onDeclineClick={handleDeclineClick}
       />
 
-      {/* Confirm Action Modal Component */}
+      {/* Confirm Action Modal */}
       <ConfirmActionModal
         isOpen={isConfirmOpen}
         onOpenChange={setIsConfirmOpen}
         action={confirmAction}
-        referenceNo={selectedTask?.referenceNo}
+        referenceNo={selectedTask?.reference_no || undefined}
         reasonText={reasonText}
         onReasonChange={setReasonText}
         onConfirm={handleConfirmAction}

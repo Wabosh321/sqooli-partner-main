@@ -100,5 +100,3 @@ export type CampaignProps = {
   duration_end: string;
   status: "draft" | "active" | "expired";
 };
-
-

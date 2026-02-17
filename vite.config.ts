@@ -1,7 +1,7 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+import svgr from "vite-plugin-svgr";
 import { defineConfig } from "vite";
 
 // Convert import.meta.url to __dirname equivalent
@@ -9,7 +9,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    svgr(),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -18,7 +21,7 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: true,
-    minify: "esbuild" as "esbuild", // ✅ Explicit type for TS
+    minify: "esbuild",
     rollupOptions: {
       output: {
         manualChunks: {

@@ -10,10 +10,13 @@ import UserSection from "../sections/UserSection";
 import ProgramsSection from "../sections/ProgramSection";
 import SettingsSection from "../sections/SettingsSection";
 import TasksSection from "../sections/TasksSection";
+import BeneficiarySection from "../sections/BeneficiarySection";
+import SponsorshipSection from "../sections/sponsorship";
 import OnboardingPage from "./Onboarding";
 import { usePermissions } from "../hooks/usePermission";
 import { usePartnerAccess } from "../hooks/usePartnerAccess";
 import { useAuth } from "../hooks/useAuth";
+import { useLocation } from "react-router-dom";
 import LockedSection from "../sections/LockedSection";
 import PermissionRefreshBanner from "../components/common/PermissionRefresherBanner";
 import { useDeviceSize } from "../hooks/useDeviceSize";
@@ -23,10 +26,16 @@ export default function DashboardPage() {
   const activeItemFromUrl = searchParams.get("tab") || "dashboard";
   const [activeItem, setActiveItem] = useState(activeItemFromUrl);
   const { hasCategory, permissions } = usePermissions();
-  const { canAccessSection, getAvailableSections, partnerType, accessLevel } =
-    usePartnerAccess();
+  const {
+    canAccessSection,
+    isSectionAllowed,
+    getAvailableSections,
+    partnerType,
+    accessLevel,
+  } = usePartnerAccess();
   const { isMobile, isTablet } = useDeviceSize();
   const { user, partner, loading: authLoading, refetch } = useAuth();
+  const location = useLocation();
 
   const prevPermissions = useRef<string | null>(null);
   const [showRefreshBanner, setShowRefreshBanner] = useState(false);
@@ -53,12 +62,12 @@ export default function DashboardPage() {
    * 3. User's role within partner type
    */
   const canAccess = (category: string): boolean => {
-    // Primary: use partner-based access if partner is loaded and has partner_type
+    // Use canonical partner resolver via usePartnerAccess when partner is present
     if (partner && (partner as any).partner_type) {
-      return canAccessSection(category);
+      return isSectionAllowed(category);
     }
 
-    // Fallback to traditional permission system
+    // Fallback to permission system (PermissionProvider derives permissions from resolver)
     if (!permissions || permissions.length === 0) return false;
 
     const admin = permissions.some(
@@ -114,6 +123,18 @@ export default function DashboardPage() {
       <LockedSection sectionName="Tasks" />
     ),
 
+    beneficiaries: canAccess("beneficiaries") ? (
+      <BeneficiarySection />
+    ) : (
+      <LockedSection sectionName="Beneficiaries" />
+    ),
+
+    sponsorships: canAccess("sponsorships") ? (
+      <SponsorshipSection />
+    ) : (
+      <LockedSection sectionName="Sponsorships" />
+    ),
+
     settings: canAccess("settings") ? (
       <SettingsSection />
     ) : (
@@ -122,9 +143,11 @@ export default function DashboardPage() {
   };
 
   // Determine which section to display
-  // If partner onboarding is incomplete and user is not super_admin, show onboarding stage
-  const displayedItem =
-    partner && !partner.onboarding_completed && user?.role !== "super_admin"
+  // If route is /tasks, show tasks. If partner onboarding is incomplete and user is not super_admin, show onboarding stage
+  const isTasksPath = location.pathname === "/tasks";
+  const displayedItem = isTasksPath
+    ? "tasks"
+    : partner && !partner.onboarding_completed && user?.role !== "super_admin"
       ? "onboarding"
       : activeItem;
 
@@ -144,7 +167,9 @@ export default function DashboardPage() {
         <PermissionRefreshBanner onRefresh={() => window.location.reload()} />
       )}
 
-      <main className="w-full h-full overflow-y-auto bg-[#F7F9FC]">
+      <main
+        className={`w-full h-full overflow-y-auto bg-[#F7F9FC] ${isMobile ? "p-3" : isTablet ? "p-4" : "p-6"}`}
+      >
         {sectionMap[displayedItem]}
       </main>
     </>

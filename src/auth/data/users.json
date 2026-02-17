@@ -1,177 +1,76 @@
 {
   "users": [
     {
-      "id": "user-001",
+      "id": "user-1",
       "email": "admin@sqooli.com",
-      "password": "Password@123",
+      "password": "admin123456",
       "role": "super_admin",
-      "partner_type": "institutional",
+      "partner_type": "beneficiary",
+      "is_first_login": false,
+      "permissions": [
+        "dashboard.view",
+        "campaigns.create",
+        "campaigns.edit",
+        "campaigns.delete",
+        "wallet.view",
+        "wallet.withdraw",
+        "reports.view",
+        "users.manage",
+        "programs.manage",
+        "settings.edit"
+      ],
       "access_level": 100,
-      "permissions": [
-        {
-          "category": "all_access",
-          "level": "full"
-        }
-      ],
-      "is_first_login": false,
-      "partner_id": "partner-001"
+      "commission_rate": 0
     },
     {
-      "id": "user-002",
+      "id": "user-2",
       "email": "partner@sqooli.com",
-      "password": "Password@123",
+      "password": "partner123456",
       "role": "admin_partner",
-      "partner_type": "institutional",
-      "access_level": 45,
-      "permissions": [
-        {
-          "category": "dashboard",
-          "level": "full"
-        },
-        {
-          "category": "campaigns",
-          "level": "full"
-        },
-        {
-          "category": "wallet",
-          "level": "full"
-        },
-        {
-          "category": "reports",
-          "level": "full"
-        },
-        {
-          "category": "users",
-          "level": "full"
-        },
-        {
-          "category": "programs",
-          "level": "full"
-        },
-        {
-          "category": "tasks",
-          "level": "full"
-        },
-        {
-          "category": "settings",
-          "level": "full"
-        }
-      ],
-      "is_first_login": false,
-      "partner_id": "partner-001",
-      "parent_user_id": null
-    },
-    {
-      "id": "user-003",
-      "email": "subuser1@sqooli.com",
-      "password": "Password@123",
-      "role": "partner_member",
-      "partner_type": "institutional",
-      "access_level": 30,
-      "permissions": [
-        {
-          "category": "dashboard",
-          "level": "full"
-        },
-        {
-          "category": "campaigns",
-          "level": "full"
-        },
-        {
-          "category": "wallet",
-          "level": "view"
-        },
-        {
-          "category": "reports",
-          "level": "view"
-        }
-      ],
-      "is_first_login": false,
-      "partner_id": "partner-001",
-      "parent_user_id": "user-002"
-    },
-    {
-      "id": "user-004",
-      "email": "subuser2@sqooli.com",
-      "password": "Password@123",
-      "role": "partner_member",
-      "partner_type": "institutional",
-      "access_level": 30,
-      "permissions": [
-        {
-          "category": "dashboard",
-          "level": "full"
-        },
-        {
-          "category": "campaigns",
-          "level": "full"
-        },
-        {
-          "category": "wallet",
-          "level": "view"
-        },
-        {
-          "category": "reports",
-          "level": "view"
-        }
-      ],
-      "is_first_login": false,
-      "partner_id": "partner-001",
-      "parent_user_id": "user-002"
-    },
-    {
-      "id": "user-005",
-      "email": "affiliate@sqooli.com",
-      "password": "Password@123",
-      "role": "partner_member",
-      "partner_type": "affiliate",
-      "access_level": 25,
-      "permissions": [
-        {
-          "category": "dashboard",
-          "level": "full"
-        },
-        {
-          "category": "campaigns",
-          "level": "full"
-        },
-        {
-          "category": "wallet",
-          "level": "full"
-        }
-      ],
-      "is_first_login": false,
-      "partner_id": "partner-002",
-      "parent_user_id": null
-    },
-    {
-      "id": "user-006",
-      "email": "media@sqooli.com",
-      "password": "Password@123",
-      "role": "partner_member",
       "partner_type": "media",
-      "access_level": 35,
+      "is_first_login": true,
       "permissions": [
-        {
-          "category": "dashboard",
-          "level": "full"
-        },
-        {
-          "category": "campaigns",
-          "level": "full"
-        },
-        {
-          "category": "wallet",
-          "level": "full"
-        },
-        {
-          "category": "reports",
-          "level": "view"
-        }
+        "dashboard.view",
+        "campaigns.create",
+        "campaigns.edit",
+        "wallet.view",
+        "wallet.withdraw",
+        "reports.view"
       ],
+      "access_level": 35,
+      "commission_rate": 15
+    },
+    {
+      "id": "user-3",
+      "email": "affiliate@sqooli.com",
+      "password": "affiliate123456",
+      "role": "partner",
+      "partner_type": "beneficiary",
+      "is_first_login": true,
+      "permissions": [
+        "dashboard.view",
+        "campaigns.view",
+        "wallet.view",
+        "wallet.withdraw"
+      ],
+      "access_level": 25,
+      "commission_rate": 10
+    },
+    {
+      "id": "user-4",
+      "email": "demo@sqooli.com",
+      "password": "demo123456",
+      "role": "partner",
+      "partner_type": "beneficiary",
       "is_first_login": false,
-      "partner_id": "partner-003",
-      "parent_user_id": null
+      "permissions": [
+        "dashboard.view",
+        "campaigns.view",
+        "wallet.view",
+        "reports.view"
+      ],
+      "access_level": 40,
+      "commission_rate": 12
     }
   ]
 }

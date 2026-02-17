@@ -62,20 +62,20 @@
   --radius: 0.625rem;
 
   /* ===== Dashboard Theme ===== */
-  --dashboard-page-bg: #F7F9FC;
-  --dashboard-section-bg: #FFFFFF;
-  --dashboard-text-primary: #0F172A;
-  --dashboard-text-secondary: #64748B;
-  --dashboard-text-muted: #94A3B8;
-  --dashboard-border-light: #E5E7EB;
-  --dashboard-border-muted: #E2E8F0;
-  --dashboard-primary: #2563EB;
-  --dashboard-primary-light: #EEF2FF;
-  --dashboard-success: #22C55E;
-  --dashboard-warning: #F59E0B;
-  --dashboard-error: #EF4444;
-  --dashboard-icon-default: #64748B;
-  --dashboard-icon-active: #2563EB;
+  --dashboard-page-bg: #f7f9fc;
+  --dashboard-section-bg: #ffffff;
+  --dashboard-text-primary: #0f172a;
+  --dashboard-text-secondary: #64748b;
+  --dashboard-text-muted: #94a3b8;
+  --dashboard-border-light: #e5e7eb;
+  --dashboard-border-muted: #e2e8f0;
+  --dashboard-primary: #2563eb;
+  --dashboard-primary-light: #eef2ff;
+  --dashboard-success: #22c55e;
+  --dashboard-warning: #f59e0b;
+  --dashboard-error: #ef4444;
+  --dashboard-icon-default: #64748b;
+  --dashboard-icon-active: #2563eb;
   --dashboard-header-height: 64px;
   --dashboard-sidebar-width: 240px;
 

@@ -1,132 +1,125 @@
-import { useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
-import { supabase } from "../lib/supabase";
 import {
   PartnerTypeSlug,
   PartnerRole,
   PartnerPermission,
-  PERMISSIONS_BY_PARTNER_TYPE,
-  DASHBOARD_SECTIONS_BY_PARTNER_TYPE,
   ADMIN_ROLES_FOR_PARTNER_TYPE,
   type DashboardSection,
+  type PartnerWithType,
 } from "../types/partner.types";
-import type { Partner } from "../types/auth.types";
+import resolveSidebarSections from "../components/ui/sidebar/resolveSidebarSections";
 
 export interface UsePartnerPermissionsReturn {
-  partner: Partner | null;
+  partner: PartnerWithType | null;
   partnerType: PartnerTypeSlug | null;
-  accessLevel: number;
+  accessLevel: number; // 0-100
   commissionRate: number;
-  permissions: any[];
   hasPermission: (permission: PartnerPermission) => boolean;
   hasRole: (role: PartnerRole) => boolean;
   canAccessSection: (section: DashboardSection) => boolean;
   getAvailableSections: () => DashboardSection[];
   isPartnerAdmin: () => boolean;
   isMediaPartner: () => boolean;
-  isCorporatePartner: () => boolean;
-  isInstitutionalPartner: () => boolean;
-  isAffiliatePartner: () => boolean;
-  loading: boolean;
+  isBeneficiaryPartner: () => boolean;
 }
 
 export function usePartnerPermissions(): UsePartnerPermissionsReturn {
   const { partner, user } = useAuth();
-  const [permissions, setPermissions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPermissions = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
+  // Get partner type - handle both direct partner_type field and nested relationship
+  const partnerType: PartnerTypeSlug | null = ((partner as any)?.partner_type
+    ?.slug ||
+    (partner as any)?.partner_type ||
+    null) as PartnerTypeSlug | null;
 
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("permissions")
-          .eq("id", user.id)
-          .single();
+  // Get user's partner role from user.partner_role field
+  const userPartnerRole: PartnerRole | null =
+    (user?.partner_role as PartnerRole) || null;
 
-        if (error) throw error;
+  // ============================================================================
+  // PERMISSION CHECKS
+  // ============================================================================
 
-        setPermissions(data?.permissions || []);
-      } catch (error) {
-        setPermissions([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPermissions();
-  }, [user?.id]);
-
-  const partnerType: PartnerTypeSlug | null =
-    (partner?.partner_type as PartnerTypeSlug) || null;
-
-  const userRole: string | null = user?.role || null;
-
+  /**
+   * Check if user has a specific permission
+   */
   const hasPermission = (permission: PartnerPermission): boolean => {
-    if (permissions.length > 0) {
-      return permissions.some(
-        (p) => p.category === permission || p.key === permission,
-      );
-    }
-
+    // Permission-level checks live in upper-level PermissionProvider/resolver.
+    // At partner-permission hook level, fall back to simple membership: if partner type exists allow partner-type default permissions.
     if (!partnerType) return false;
-
-    const typePermissions = PERMISSIONS_BY_PARTNER_TYPE[partnerType];
-    return typePermissions?.includes(permission) ?? false;
+    // Conservative default: allow if section is visible for partner type
+    const resolver = resolveSidebarSections({
+      partnerType: partnerType as any,
+    });
+    return (
+      resolver.visibleSections.includes(permission as unknown as string) ||
+      false
+    );
   };
 
+  /**
+   * Check if user has a specific partner role
+   */
   const hasRole = (role: PartnerRole): boolean => {
-    if (!userRole) return false;
-    return (userRole as PartnerRole) === role;
+    if (!userPartnerRole) return false;
+    return userPartnerRole === role;
   };
 
+  /**
+   * Check if user can access a specific dashboard section
+   */
   const canAccessSection = (section: DashboardSection): boolean => {
     if (!partnerType) return false;
-
-    const availableSections = DASHBOARD_SECTIONS_BY_PARTNER_TYPE[partnerType];
-    return availableSections?.includes(section) ?? false;
+    const resolver = resolveSidebarSections({
+      partnerType: partnerType as any,
+    });
+    return resolver.isVisible(section as string);
   };
 
+  /**
+   * Get all available dashboard sections for this partner type
+   */
   const getAvailableSections = (): DashboardSection[] => {
     if (!partnerType) return [];
-    return DASHBOARD_SECTIONS_BY_PARTNER_TYPE[partnerType] || [];
+    const resolver = resolveSidebarSections({
+      partnerType: partnerType as any,
+    });
+    return resolver.visibleSections as DashboardSection[];
   };
 
+  /**
+   * Check if user is an admin for their partner type
+   */
   const isPartnerAdmin = (): boolean => {
-    if (!partnerType || !userRole) return false;
+    if (!partnerType || !userPartnerRole) return false;
 
     const adminRoles = ADMIN_ROLES_FOR_PARTNER_TYPE[partnerType];
-    return adminRoles?.includes(userRole as PartnerRole) ?? false;
+    return adminRoles?.includes(userPartnerRole) ?? false;
   };
 
+  // ============================================================================
+  // PARTNER TYPE CHECKS
+  // ============================================================================
+
   const isMediaPartner = (): boolean => partnerType === PartnerTypeSlug.MEDIA;
-  const isCorporatePartner = (): boolean =>
-    partnerType === PartnerTypeSlug.CORPORATE;
-  const isInstitutionalPartner = (): boolean =>
-    partnerType === PartnerTypeSlug.INSTITUTIONAL;
-  const isAffiliatePartner = (): boolean =>
-    partnerType === PartnerTypeSlug.AFFILIATE;
+  const isBeneficiaryPartner = (): boolean =>
+    partnerType === PartnerTypeSlug.BENEFICIARY;
+
+  // ============================================================================
+  // RETURN
+  // ============================================================================
 
   return {
-    partner,
+    partner: (partner as any as PartnerWithType) || null,
     partnerType,
-    accessLevel: partner?.access_level || 0,
-    commissionRate: partner?.commission_rate || 0,
-    permissions,
+    accessLevel: (partner as any)?.access_level || 0,
+    commissionRate: (partner as any)?.commission_rate || 0,
     hasPermission,
     hasRole,
     canAccessSection,
     getAvailableSections,
     isPartnerAdmin,
     isMediaPartner,
-    isCorporatePartner,
-    isInstitutionalPartner,
-    isAffiliatePartner,
-    loading,
+    isBeneficiaryPartner,
   };
 }

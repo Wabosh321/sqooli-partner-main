@@ -140,7 +140,7 @@ export default function AddUserDialog({
         const { data: partnerPerms } = await supabase
           .from("partner_type_permissions")
           .select("*")
-          .eq("partner_type_slug", "partner");
+          .in("partner_type_slug", ["media", "beneficiary"]);
 
         if (partnerPerms && partnerPerms.length > 0) {
           // Map partner_type_permissions to permission objects
@@ -160,7 +160,7 @@ export default function AddUserDialog({
           const defaultPerms = mappedPerms.filter(
             (p) =>
               p.permission_key?.includes("settings") ||
-              p.permission_key?.includes("programs")
+              p.permission_key?.includes("programs"),
           );
           setDefaultPermissions(defaultPerms.slice(0, 2)); // Take first 2 defaults
           return;
@@ -177,7 +177,7 @@ export default function AddUserDialog({
         if (!mounted) return;
         setPermissions((allPerms || []).map((p: any) => ({ ...p, _id: p.id })));
         setDefaultPermissions(
-          (defPerms || []).map((p: any) => ({ ...p, _id: p.id }))
+          (defPerms || []).map((p: any) => ({ ...p, _id: p.id })),
         );
       } catch (err) {
         console.error("Failed to load permissions", err);
@@ -199,15 +199,18 @@ export default function AddUserDialog({
     "all_access",
   ];
 
-  const groupedPermissions = (permissions || []).reduce((acc, perm) => {
-    if (!acc[perm.category]) acc[perm.category] = [];
-    acc[perm.category]?.push(perm);
-    return acc;
-  }, {} as Record<string, typeof permissions>);
+  const groupedPermissions = (permissions || []).reduce(
+    (acc, perm) => {
+      if (!acc[perm.category]) acc[perm.category] = [];
+      acc[perm.category]?.push(perm);
+      return acc;
+    },
+    {} as Record<string, typeof permissions>,
+  );
 
   // Sort categories and permissions within each category
   const sortedCategories = categoryOrder.filter(
-    (cat) => groupedPermissions[cat]
+    (cat) => groupedPermissions[cat],
   );
 
   sortedCategories.forEach((cat) => {
@@ -219,23 +222,23 @@ export default function AddUserDialog({
 
   const handleTogglePermission = (id: string) => {
     setSelectedPermissions((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
     );
   };
 
   const handleToggleCategory = (
     _category: string,
-    perms: typeof permissions
+    perms: typeof permissions,
   ) => {
     const categoryPermIds = perms?.map((p) => p._id) || [];
     const allSelected = categoryPermIds.every((id) =>
-      selectedPermissions.includes(id)
+      selectedPermissions.includes(id),
     );
 
     if (allSelected) {
       // Deselect all in category
       setSelectedPermissions((prev) =>
-        prev.filter((id) => !categoryPermIds.includes(id))
+        prev.filter((id) => !categoryPermIds.includes(id)),
       );
     } else {
       // Select all in category
@@ -257,7 +260,7 @@ export default function AddUserDialog({
 
     // Combine selected + default permissions (avoid duplicates)
     const allPermIds = Array.from(
-      new Set([...selectedPermissions, ...defaultPermIds])
+      new Set([...selectedPermissions, ...defaultPermIds]),
     );
 
     if (allPermIds.length === 0 || !partnerId) {
@@ -396,10 +399,10 @@ export default function AddUserDialog({
                   const perms = groupedPermissions[category] || [];
                   const categoryPermIds = perms.map((p) => p._id);
                   const allSelected = categoryPermIds.every((id) =>
-                    selectedPermissions.includes(id)
+                    selectedPermissions.includes(id),
                   );
                   const someSelected = categoryPermIds.some((id) =>
-                    selectedPermissions.includes(id)
+                    selectedPermissions.includes(id),
                   );
 
                   return (
@@ -445,7 +448,7 @@ export default function AddUserDialog({
                               <div className="flex items-center gap-3 flex-1">
                                 <Checkbox
                                   checked={selectedPermissions.includes(
-                                    perm._id
+                                    perm._id,
                                   )}
                                   onCheckedChange={() =>
                                     handleTogglePermission(perm._id)

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Header } from "./Header";
-import { AppSidebar } from "./Sidebar";
-import { useDeviceSize } from "../../hooks/useDeviceSize";
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Header } from './Header';
+import { AppSidebar } from './Sidebar';
+import { useDeviceSize } from '../../hooks/useDeviceSize';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,7 +12,7 @@ interface DashboardLayoutProps {
 
 /**
  * DashboardLayout - Authenticated dashboard-only layout
- *
+ * 
  * Structure for Desktop (lg and above):
  * ┌─────────────────────────────────┐
  * │  Header (Logo + Navbar)         │
@@ -21,8 +21,8 @@ interface DashboardLayoutProps {
  * │  (Left)    │  (Scrollable)      │
  * │            │                    │
  * └────────────┴────────────────────┘
- *
- * Mobile (<lg):
+ * 
+ * Mobile (<lg): 
  * ┌─────────────────────────────────┐
  * │  Header (Menu + Logo + Avatar)  │
  * ├─────────────────────────────────┤
@@ -35,13 +35,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isMobile } = useDeviceSize();
-  const [activeItem, setActiveItem] = useState("dashboard");
+  const [activeItem, setActiveItem] = useState('dashboard');
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   // Extract active item from URL query param or path
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const tab = params.get("tab") || "dashboard";
+    const tab = params.get('tab') || 'dashboard';
     setActiveItem(tab);
   }, [location.search]);
 
@@ -67,51 +67,40 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (!mobileDrawerOpen) return;
 
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         setMobileDrawerOpen(false);
       }
     };
 
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
   }, [mobileDrawerOpen]);
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
     if (mobileDrawerOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     };
   }, [mobileDrawerOpen]);
 
   return (
     <div className="w-full h-screen bg-[#F7F9FC] overflow-hidden">
-      {/* Header - Full width, fixed at top with z-30 to allow modals to overlay */}
-      <div className="relative z-30">
-        <Header
-          isDashboard={true}
-          mobileDrawerOpen={mobileDrawerOpen}
-          onMobileDrawerToggle={setMobileDrawerOpen}
-        />
-      </div>
+      {/* Header - Full width, fixed at top */}
+      <Header 
+        isDashboard={true}
+        mobileDrawerOpen={mobileDrawerOpen}
+        onMobileDrawerToggle={setMobileDrawerOpen}
+      />
 
       {/* Main Content Container - offset for fixed header, responsive sidebar spacing */}
-      <div
-        style={{ marginTop: "70px" }}
-        className="h-[calc(100vh-70px)] w-full overflow-hidden flex"
-      >
+      <div style={{ marginTop: '70px' }} className="h-[calc(100vh-70px)] w-full overflow-hidden flex">
         {/* Main Content Area - full width, responsive padding for sidebar (136px → 9.44vw) */}
-        <main
-          className="flex-1 flex flex-col overflow-hidden bg-[#F7F9FC]"
-          style={{
-            paddingLeft: "max(9.44vw, 136px)",
-            paddingRight: "max(2.22vw, 32px)",
-          }}
-        >
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#F7F9FC]" style={{ paddingLeft: 'max(9.44vw, 136px)', paddingRight: 'max(2.22vw, 32px)' }}>
           {/* Page Content - scrollable, starts at top aligned with sidebar, hidden scrollbar */}
           <div className="flex-1 overflow-y-auto hide-scrollbar">
             {children}
@@ -141,8 +130,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       `}</style>
 
       {/* Desktop Sidebar - AppSidebar applies fixed positioning when rendered for dashboard */}
-      <div className="hidden lg:block z-40">
-        <AppSidebar
+      <div className="hidden lg:block z-[1000]">
+        <AppSidebar 
           activeItem={activeItem}
           onSelect={handleNavigation}
           isDashboard={true}
@@ -155,7 +144,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Overlay backdrop for mobile */}
         {mobileDrawerOpen && (
           <div
-            className="fixed inset-0 bg-foreground/30 backdrop-blur-sm z-35"
+            className="fixed inset-0 bg-foreground/30 backdrop-blur-sm z-40"
             onClick={() => setMobileDrawerOpen(false)}
             role="presentation"
             aria-hidden="true"
@@ -165,14 +154,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Mobile Drawer Sidebar */}
         <div
           className={`fixed left-0 bottom-0 z-50 w-72 max-w-[calc(100vw-1rem)] bg-background border-r border-border shadow-lg transition-transform duration-300 ease-in-out overflow-y-auto ${
-            mobileDrawerOpen ? "translate-x-0" : "-translate-x-full"
+            mobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
-          style={{ top: "70px" }}
+          style={{ top: '70px' }}
           role="navigation"
           aria-label="Mobile navigation drawer"
           aria-hidden={!mobileDrawerOpen}
         >
-          <AppSidebar
+          <AppSidebar 
             activeItem={activeItem}
             onSelect={handleNavigation}
             isDashboard={true}

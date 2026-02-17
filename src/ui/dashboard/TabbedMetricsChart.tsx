@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   ResponsiveContainer,
   LineChart as ReLineChart,
@@ -7,15 +7,11 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import transactionsData from "../../auth/data/transactions.json";
 import { useAuth } from "../../hooks/useAuth";
+import { useDashboardMetrics } from "../../application/dashboard/useDashboardMetrics";
 
 function formatYAxis(value: number) {
   return value >= 1000 ? `${value / 1000}K` : `${value}`;
-}
-
-function formatDateLabel(d: Date) {
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
 export default function TabbedMetricsChart() {
@@ -25,81 +21,29 @@ export default function TabbedMetricsChart() {
   const { partner } = useAuth();
   const partnerId = (partner as any)?.id ?? (partner as any)?._id;
 
-  const [earningsData, setEarningsData] = useState<any[]>([]);
-  const [withdrawalsData, setWithdrawalsData] = useState<any[]>([]);
-  const [engagementsData, setEngagementsData] = useState<any[]>([]);
+  // Fetch metrics using centralized hook (shared with LineChart)
+  const {
+    data: metrics,
+    isLoading,
+    error,
+  } = useDashboardMetrics(partnerId, 30);
 
-  useEffect(() => {
-    try {
-      const since = new Date();
-      since.setDate(since.getDate() - 30);
-      const sinceStr = since.toISOString();
-
-      // Filter transactions for this partner and last 30 days
-      const txs = transactionsData.transactions.filter((t) => {
-        const txDate = new Date(t.created_at).toISOString();
-        return (!partnerId || t.partner_id === partnerId) && txDate >= sinceStr;
-      });
-
-      const bucket: Record<string, number> = {};
-      const bucketWithdrawals: Record<string, number> = {};
-      const bucketEng: Record<string, number> = {};
-
-      const days: Date[] = [];
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        days.push(new Date(d.getFullYear(), d.getMonth(), d.getDate()));
-      }
-
-      days.forEach((d) => {
-        const key = d.toISOString().split("T")[0];
-        bucket[key] = 0;
-        bucketWithdrawals[key] = 0;
-        bucketEng[key] = 0;
-      });
-
-      txs.forEach((t) => {
-        const key = (t.created_at || "").split("T")[0];
-        if (!key) return;
-        const amt = Number(t.amount || 0);
-        bucket[key] = (bucket[key] || 0) + amt;
-        if (
-          t.transaction_type === "withdrawal" ||
-          t.transaction_type === "withdraw"
-        ) {
-          bucketWithdrawals[key] = (bucketWithdrawals[key] || 0) + amt;
-        }
-        if (
-          t.transaction_type === "engagement" ||
-          t.transaction_type === "engage"
-        ) {
-          bucketEng[key] = (bucketEng[key] || 0) + amt;
-        }
-      });
-
-      setEarningsData(
-        days.map((d) => ({
-          date: formatDateLabel(d),
-          value: bucket[d.toISOString().split("T")[0]] || 0,
-        }))
-      );
-      setWithdrawalsData(
-        days.map((d) => ({
-          date: formatDateLabel(d),
-          value: bucketWithdrawals[d.toISOString().split("T")[0]] || 0,
-        }))
-      );
-      setEngagementsData(
-        days.map((d) => ({
-          date: formatDateLabel(d),
-          value: bucketEng[d.toISOString().split("T")[0]] || 0,
-        }))
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  }, [partnerId]);
+  // Map metrics to chart data by tab
+  const earningsData =
+    metrics?.map((m) => ({
+      date: m.date,
+      value: m.earnings,
+    })) ?? [];
+  const withdrawalsData =
+    metrics?.map((m) => ({
+      date: m.date,
+      value: m.withdrawals,
+    })) ?? [];
+  const engagementsData =
+    metrics?.map((m) => ({
+      date: m.date,
+      value: m.engagements,
+    })) ?? [];
 
   const chartDataMap: Record<string, any[]> = {
     earnings: earningsData,
@@ -110,11 +54,11 @@ export default function TabbedMetricsChart() {
   const earningsSum = earningsData.reduce((acc, d) => acc + (d.value || 0), 0);
   const withdrawalsSum = withdrawalsData.reduce(
     (acc, d) => acc + (d.value || 0),
-    0
+    0,
   );
   const engagementsSum = engagementsData.reduce(
     (acc, d) => acc + (d.value || 0),
-    0
+    0,
   );
 
   const tabs = [
@@ -137,7 +81,48 @@ export default function TabbedMetricsChart() {
     },
   ];
 
-  const activeData = chartDataMap[activeTab];
+  if (error) {
+    return (
+      <div
+        style={{
+          width: "956px",
+          height: "379px",
+          backgroundColor: "#FFFFFF",
+          borderRadius: 16,
+          padding: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
+        <div style={{ color: "#DC2626", fontSize: 14, fontWeight: 500 }}>
+          Error loading metrics
+        </div>
+        <div style={{ color: "#6B7280", fontSize: 12 }}>{error.message}</div>
+      </div>
+    );
+  }
+
+  if (isLoading || metrics === undefined) {
+    return (
+      <div
+        style={{
+          width: "956px",
+          height: "379px",
+          backgroundColor: "#FFFFFF",
+          borderRadius: 16,
+          padding: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div style={{ color: "#9CA3AF" }}>Loading metrics...</div>
+      </div>
+    );
+  }
   // Exact spec constants
   const ROOT_WIDTH = 956;
   const ROOT_HEIGHT = 379;
@@ -147,6 +132,8 @@ export default function TabbedMetricsChart() {
   const TAB_HEIGHT = 69;
   const GAP = 16;
   const TAB_LEFTS = [0, TAB_WIDTH + GAP, TAB_WIDTH * 2 + GAP * 2];
+
+  const activeData = chartDataMap[activeTab];
 
   function GraphHeader({
     active,

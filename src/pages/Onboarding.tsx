@@ -1,151 +1,197 @@
-import { useState, useEffect, useRef } from "react";
+"use client";
+
+import React, { useState } from "react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { isConvexUser } from "../types/auth.types";
-import { completePartnerOnboarding } from "../utils/verifyAuthData";
-import { StepsList } from "../components/onboarding/StepsList";
-import { useStepProgression } from "../components/onboarding/hooks/useStepProgression";
-import { useOnboardingData } from "../components/onboarding/hooks/useOnboardingData";
-import { WalletStep } from "../components/onboarding/steps/WalletStep";
-import { CampaignStep } from "../components/onboarding/steps/CampaignStep";
-import { UsersStep } from "../components/onboarding/steps/UsersStep";
-import { TwoFactorStep } from "../components/onboarding/steps/TwoFactorStep";
-import { SocialMediaStep } from "../components/onboarding/steps/SocialMediaStep";
-import type { OnboardingStep } from "../components/onboarding/types";
+import { supabase } from "../lib/supabase";
+import { toast } from "sonner";
+import partnerImage from "../assets/Frame 2085664798.png";
+import schoolImage from "../assets/Frame 2085664800.png";
+import teacherImage from "../assets/Frame 2085664799.png";
 
-export default function OnboardingPage() {
-  const [activeStepId, setActiveStepId] = useState<number | null>(null);
-  const { partner, user, loading: authLoading, refetch } = useAuth();
-  const hasTriedAutoComplete = useRef(false);
+export default function SelectAccount() {
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { user, partner } = useAuth();
 
-  // Data hooks
-  const { wallet, campaign, loading: dataLoading, refetch: refetchData } =
-    useOnboardingData({ partnerId: partner?._id });
-  const { buildSteps } = useStepProgression({ partner });
+  const accountTypes = [
+    {
+      id: "partner",
+      label: "Partner",
+      image: partnerImage,
+    },
+    {
+      id: "school",
+      label: "School",
+      image: schoolImage,
+    },
+    {
+      id: "teacher",
+      label: "Teacher",
+      image: teacherImage,
+    },
+  ];
 
-  // Skip onboarding for admins
-  useEffect(() => {
-    if (authLoading) return;
-    if (user && isConvexUser(user) && user.role === "super_admin") {
-      return;
-    }
-  }, [user, authLoading]);
-
-  // Complete onboarding when all steps done
-  const handleCompleteOnboarding = async () => {
-    if (!partner?._id) {
-      console.error("❌ No partner ID available");
-      return;
+  const verifyAccount = async (accountId: string) => {
+    if (!user) {
+      toast.error("No authenticated user found");
+      return false;
     }
 
     try {
-      console.log("📝 Completing onboarding for partner:", partner._id);
-      const updatedPartner = await completePartnerOnboarding(partner._id);
-
-      if (updatedPartner?.onboarding_completed) {
-        console.log("✅ Onboarding completed successfully");
-        if (refetch) {
-          console.log("🔄 Refreshing auth context...");
-          await refetch();
-        }
-      } else {
-        console.error("❌ Failed to confirm onboarding completion");
+      // Partner: either we already have partner in auth context or partners table matches user's email
+      if (accountId === "partner") {
+        if (partner) return true;
+        const { data } = await supabase
+          .from("partners")
+          .select("id")
+          .or(`org_email.eq.${user.email},email.eq.${user.email}`)
+          .limit(1);
+        return data && (data as any).length > 0;
       }
-    } catch (error) {
-      console.error("Error completing onboarding:", error);
+
+      // School: look for partners with institution-like partner_type and matching email
+      if (accountId === "school") {
+        const { data } = await supabase
+          .from("partners")
+          .select("id,partner_type")
+          .or(`org_email.eq.${user.email},email.eq.${user.email}`)
+          .limit(1);
+        if (!data || (data as any).length === 0) return false;
+        const p = (data as any)[0];
+        // Accept institutional/corporate as possible schools (best-effort)
+        return ["beneficiary", "school"].includes(
+          (p.partner_type || "").toLowerCase(),
+        );
+      }
+
+      // Teacher: look in users table for role/partner_role indicating teacher
+      if (accountId === "teacher") {
+        const { data } = await supabase
+          .from("users")
+          .select("id,role,partner_role,email")
+          .eq("email", user.email)
+          .limit(1);
+        if (!data || (data as any).length === 0) return false;
+        const u = (data as any)[0];
+        const role = (u.role || "").toLowerCase();
+        const partnerRole = (u.partner_role || "").toLowerCase();
+        return (
+          role === "teacher" ||
+          partnerRole === "teacher" ||
+          partnerRole === "instructor"
+        );
+      }
+
+      return false;
+    } catch (err) {
+      console.error("SelectAccount: verification error", err);
+      return false;
     }
   };
 
-  // Auto-complete if all required steps are done
-  useEffect(() => {
-    if (!partner || dataLoading || authLoading) return;
+  const onContinue = async () => {
+    if (!selectedAccount) return;
+    const verificationPromise = (async () => {
+      const ok = await verifyAccount(selectedAccount);
+      if (!ok) throw new Error("No matching account found");
+      return true;
+    })();
 
-    if (hasTriedAutoComplete.current) {
-      console.log("⏭️ Already attempted auto-complete, skipping");
-      return;
+    toast.promise(verificationPromise, {
+      loading: "Verifying account...",
+      success: "Account verified — redirecting...",
+      error: (e) => String(e),
+    });
+
+    try {
+      await verificationPromise;
+      navigate("/dashboard");
+    } catch (err) {
+      toast.error("You don't have the selected account type on record.");
     }
-
-    const allStepsComplete =
-      partner.wallet_setup_completed === true &&
-      partner.campaign_created === true;
-
-    const stillNeedsCompletion = partner.onboarding_completed !== true;
-
-    if (allStepsComplete && stillNeedsCompletion) {
-      console.log("🎯 All required steps complete, auto-completing onboarding");
-      hasTriedAutoComplete.current = true;
-      handleCompleteOnboarding();
-    }
-  }, [partner?.id, dataLoading, authLoading]);
-
-  // Handle step completion
-  const handleStepComplete = async () => {
-    console.log(`✅ Step ${activeStepId} completed`);
-    await refetchData();
-    if (refetch) {
-      await refetch();
-    }
-    setActiveStepId(null);
   };
-
-  // Handle step action
-  const handleStepAction = (stepId: number) => {
-    setActiveStepId(stepId);
-  };
-
-  const steps = buildSteps();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8 py-12">
-      <div className="w-full max-w-2xl space-y-8">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold text-gray-900">
-            Welcome to Sqooli
-          </h1>
-          <p className="text-gray-600">
-            Complete the following steps to activate your profile
-          </p>
+    <div className="relative w-full min-h-screen bg-white flex items-center justify-center p-8">
+      <div
+        className="flex flex-col items-center gap-12"
+        style={{ width: 638, height: 424, gap: 48 }}
+      >
+        {/* Logo */}
+        <div className="flex items-center justify-center w-full">
+          <img
+            src="/images/sqooli-logo.svg"
+            alt="Sqooli logo"
+            className="w-48 h-auto"
+          />
         </div>
 
-        {/* Steps List */}
-        <StepsList steps={steps} onStepAction={handleStepAction} />
-      </div>
+        <div className="text-center">
+          <h1 className="text-[#1F2937] text-3xl font-semibold mb-2">
+            Select Account
+          </h1>
+          <p className="text-[#6B7280] text-base">Select an account to login</p>
+        </div>
 
-      {/* Step Modals */}
-      {partner && user && isConvexUser(user) && (
-        <>
-          <WalletStep
-            step={steps[0]}
-            partner={partner}
-            onComplete={handleStepComplete}
-            isActive={activeStepId === 1}
-          />
-          <CampaignStep
-            step={steps[1]}
-            partner={partner}
-            onComplete={handleStepComplete}
-            isActive={activeStepId === 2}
-          />
-          <UsersStep
-            step={steps[2]}
-            partner={partner}
-            onComplete={handleStepComplete}
-            isActive={activeStepId === 3}
-          />
-          <TwoFactorStep
-            step={steps[3]}
-            partner={partner}
-            onComplete={handleStepComplete}
-            isActive={activeStepId === 4}
-          />
-          <SocialMediaStep
-            step={steps[4]}
-            partner={partner}
-            onComplete={handleStepComplete}
-            isActive={activeStepId === 5}
-          />
-        </>
-      )}
+        <div className="flex gap-6 justify-center">
+          {accountTypes.map((account) => (
+            <button
+              key={account.id}
+              onClick={() => setSelectedAccount(account.id)}
+              className={`relative w-40 h-52 rounded-2xl border transition-all ${
+                selectedAccount === account.id
+                  ? "bg-[#E8F5EC] border-[#E8F5EC]"
+                  : "bg-white border-[#E5E7EB] hover:border-[#3B9FE2]"
+              }`}
+            >
+              <div className="flex flex-col items-center justify-center h-full gap-4 p-4">
+                <div className="w-28 h-28 rounded-full overflow-hidden flex items-center justify-center relative">
+                  {selectedAccount === account.id && (
+                    <div className="absolute inset-0 bg-[#34D399] rounded-full flex items-center justify-center z-10">
+                      <Check className="w-12 h-12 text-white" strokeWidth={3} />
+                    </div>
+                  )}
+                  <img
+                    src={account.image}
+                    alt={account.label}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-[#1F2937] text-lg font-medium">
+                  {account.label}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <div
+          className="w-full flex justify-between items-center"
+          style={{ width: "100%" }}
+        >
+          <button
+            className="flex items-center gap-2 text-[#374151] hover:text-[#1F2937] transition-colors"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-medium">Back</span>
+          </button>
+          <button
+            className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
+              selectedAccount
+                ? "bg-[#3B9FE2] text-white hover:bg-[#2D8FD5]"
+                : "bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed"
+            }`}
+            disabled={!selectedAccount}
+            onClick={onContinue}
+          >
+            <span className="font-medium">Continue</span>
+            <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

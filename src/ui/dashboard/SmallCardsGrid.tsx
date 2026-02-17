@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Briefcase,
   Megaphone,
@@ -7,90 +7,21 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
-import { supabase } from "../../lib/supabase";
+import { useDashboardStats } from "../../application/dashboard/useDashboardStats";
 
 export default function SmallCardsGrid() {
   const { partner } = useAuth();
   const partnerId = (partner as any)?.id ?? (partner as any)?._id;
 
-  const [totalCampaigns, setTotalCampaigns] = useState<number | null>(null);
-  const [ongoingCampaigns, setOngoingCampaigns] = useState<number | null>(null);
-  const [engagements, setEngagements] = useState<number | null>(null);
-  const [purchases, setPurchases] = useState<number | null>(null);
-  const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [balanceChange, setBalanceChange] = useState<number>(0);
+  // Fetch all stats using centralized hook
+  const { stats, isLoading, error } = useDashboardStats(partnerId);
 
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        if (!partnerId) {
-          setTotalCampaigns(0);
-          setOngoingCampaigns(0);
-          setEngagements(0);
-          setPurchases(0);
-          setWalletBalance(0);
-          setBalanceChange(0);
-          return;
-        }
-
-        // Fetch campaigns for this partner
-        const { data: campaigns, error: campaignsError } = await supabase
-          .from("campaigns")
-          .select("id, status")
-          .eq("partner_id", partnerId);
-
-        if (campaignsError) throw campaignsError;
-
-        const totalCount = campaigns?.length || 0;
-        const ongoingCount =
-          campaigns?.filter((c) => c.status === "active").length || 0;
-
-        // Fetch transactions for this partner
-        const { data: transactions, error: transError } = await supabase
-          .from("transactions")
-          .select("id, transaction_type")
-          .eq("partner_id", partnerId);
-
-        if (transError) throw transError;
-
-        const txCount = transactions?.length || 0;
-        const purchaseCount =
-          transactions?.filter((t) => t.transaction_type === "purchase")
-            .length || 0;
-
-        // Fetch wallet for this partner
-        const { data: wallet, error: walletError } = await supabase
-          .from("wallets")
-          .select("balance, total_earned")
-          .eq("partner_id", partnerId)
-          .single();
-
-        if (walletError && walletError.code !== "PGRST116") throw walletError;
-
-        const currentBalance = wallet?.balance || 0;
-        const totalEarned = wallet?.total_earned || 0;
-        const changePercent =
-          totalEarned > 0 ? (currentBalance / totalEarned) * 100 - 100 : 0;
-
-        setTotalCampaigns(totalCount);
-        setOngoingCampaigns(ongoingCount);
-        setEngagements(txCount);
-        setPurchases(purchaseCount);
-        setWalletBalance(currentBalance);
-        setBalanceChange(Math.round(changePercent));
-      } catch (err) {
-        console.error("SmallCardsGrid: error loading stats", err);
-        setTotalCampaigns(0);
-        setOngoingCampaigns(0);
-        setEngagements(0);
-        setPurchases(0);
-        setWalletBalance(0);
-        setBalanceChange(0);
-      }
-    };
-
-    loadStats();
-  }, [partnerId]);
+  const totalCampaigns = stats?.totalCampaigns ?? null;
+  const ongoingCampaigns = stats?.ongoingCampaigns ?? null;
+  const engagements = stats?.engagements ?? null;
+  const purchases = stats?.purchases ?? null;
+  const walletBalance = stats?.walletBalance ?? 0;
+  const balanceChange = stats?.balanceChange ?? 0;
 
   return (
     <div
@@ -105,6 +36,8 @@ export default function SmallCardsGrid() {
         overflow: "hidden",
       }}
     >
+      {error && <div className="text-red-500 text-xs">Error loading stats</div>}
+
       {/* Primary Section */}
       <div className="flex flex-col gap-0" style={{ flex: "0 0 auto" }}>
         <div className="w-6 h-6 rounded bg-orange-100 flex items-center justify-center mb-1">
@@ -140,7 +73,7 @@ export default function SmallCardsGrid() {
             Total Campaigns
           </p>
           <p className="text-sm font-semibold text-gray-900">
-            {totalCampaigns ?? "—"}
+            {isLoading ? "-" : (totalCampaigns ?? "—")}
           </p>
         </div>
 
@@ -154,7 +87,7 @@ export default function SmallCardsGrid() {
             Ongoing Campaigns
           </p>
           <p className="text-sm font-semibold text-gray-900">
-            {ongoingCampaigns ?? "—"}
+            {isLoading ? "-" : (ongoingCampaigns ?? "—")}
           </p>
         </div>
 
@@ -168,7 +101,7 @@ export default function SmallCardsGrid() {
             Engagements
           </p>
           <p className="text-sm font-semibold text-gray-900">
-            {engagements ?? "—"}
+            {isLoading ? "-" : (engagements ?? "—")}
           </p>
         </div>
 
@@ -182,7 +115,7 @@ export default function SmallCardsGrid() {
             Purchases
           </p>
           <p className="text-sm font-semibold text-gray-900">
-            {purchases ?? "—"}
+            {isLoading ? "-" : (purchases ?? "—")}
           </p>
         </div>
       </div>

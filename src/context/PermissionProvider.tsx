@@ -1,10 +1,15 @@
 // PermissionProvider.tsx
 import type { ReactNode } from "react";
-import { PermissionContext, type Permission, type UserRole } from "./PermissionContext";
+import {
+  PermissionContext,
+  type Permission,
+  type UserRole,
+} from "./PermissionContext";
 import { useAuth } from "../hooks/useAuth";
 import { useState, useEffect, useMemo } from "react";
 import { isConvexUser, type Partner } from "../types/auth.types";
 import { supabase } from "../lib/supabase";
+import resolveSidebarSections from "../components/ui/sidebar/resolveSidebarSections";
 
 export function PermissionProvider({ children }: { children: ReactNode }) {
   const { user, partner, loading: authLoading, loginMethod } = useAuth();
@@ -13,7 +18,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
 
   // Load role from user or partner; permissions table is deferred to post-MVP
   useEffect(() => {
-    if (isConvexUser(user)) {
+    if (user && isConvexUser(user)) {
       setUserRole(user.role as UserRole);
       setUserPermissionIds((user as any).permission_ids ?? []);
     } else if (partner) {
@@ -25,13 +30,14 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     }
   }, [user, partner]);
 
-  // Permissions derived from role AND partner type
-  // Priority: partner.partner_type -> user.role -> defaults
+  // Permissions derived from resolver (single source of truth)
   const permissions: Permission[] = useMemo(() => {
-    const perms: Permission[] = [];
-    
-    // Admin users get full access (super_admin, partner_admin, admin_partner)
-    if (userRole === "super_admin" || userRole === "partner_admin" || userRole === "admin_partner") {
+    // Admin users get full access
+    if (
+      userRole === "super_admin" ||
+      userRole === "partner_admin" ||
+      userRole === "admin_partner"
+    ) {
       return [
         {
           _id: "all_access",
@@ -42,65 +48,38 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
           level: "full",
           is_default: true,
           created_at: new Date().toISOString(),
-        }
+        },
       ];
     }
-    
-    // Partners get section-based permissions from their partner_type
+
     const partnerType = (partner as any)?.partner_type;
     const accessLevel = (partner as any)?.access_level;
-    const status = (partner as any)?.status;
-    
-    // DEBUG: Log permission resolution
-    if (import.meta.env.DEV) {
-      console.debug('PermissionProvider: permission resolution', {
-        userRole,
-        partnerType,
-        accessLevel,
-        status,
-      });
-    }
-    
-    // If partner has a valid partner_type, grant partner permissions
-    // (status may be null or inactive, but partner_type indicates the user is a partner)
-    if (partnerType) {
-      // Map partner sections to permission objects
-      const sectionMap: Record<string, string[]> = {
-        affiliate: ['campaigns', 'wallet'],
-        media: ['campaigns', 'wallet', 'reports'],
-        corporate: ['campaigns', 'wallet', 'reports'],
-        institutional: ['campaigns', 'wallet', 'reports', 'users', 'programs', 'settings'],
-      };
-      
-      const sections = sectionMap[partnerType] || sectionMap.affiliate;
-      
-      // Add dashboard permission for all partners
-      perms.push({
-        _id: "dashboard.read",
-        key: "dashboard.read",
-        name: "View Dashboard",
-        description: "Can view dashboard",
-        category: "dashboard",
-        level: "read",
-        is_default: true,
-        created_at: new Date().toISOString(),
-      });
-      
-      // Add section-specific permissions
-      for (const section of sections) {
-        perms.push({
-          _id: `${section}.read`,
-          key: `${section}.read`,
-          name: `View ${section}`,
-          description: `Can view ${section}`,
-          category: section,
-          level: "read",
-          is_default: true,
-          created_at: new Date().toISOString(),
-        });
-      }
-    }
-    
+
+    const resolver = resolveSidebarSections({
+      partnerType: partnerType || undefined,
+      accessLevel: accessLevel ?? undefined,
+      userRole: userRole ?? undefined,
+      permissions: null,
+      partnerFlags: {
+        onboarding_completed: (partner as any)?.onboarding_completed ?? true,
+        wallet_setup_completed:
+          (partner as any)?.wallet_setup_completed ?? false,
+        campaign_created: (partner as any)?.campaign_created ?? false,
+      },
+      fallback: ["dashboard"],
+    });
+
+    const perms: Permission[] = resolver.visibleSections.map((section) => ({
+      _id: `${section}.read`,
+      key: `${section}.read`,
+      name: `View ${section}`,
+      description: `Can view ${section}`,
+      category: section,
+      level: "read",
+      is_default: true,
+      created_at: new Date().toISOString(),
+    }));
+
     return perms;
   }, [userRole, partner]);
 
@@ -114,7 +93,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
   // Check if user has exact permission by key
   const hasPermission = (permissionKey: string): boolean => {
     if (isSuperAdmin()) return true;
-    
+
     // Check permissions array first
     if (permissions && permissions.length > 0) {
       // Check for exact key match
@@ -122,16 +101,20 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         return true;
       }
       // Check for category match (e.g., "dashboard" matches "dashboard.read")
-      const category = permissionKey.split('.')[0];
+      const category = permissionKey.split(".")[0];
       if (permissions.some((p) => p.category === category)) {
         return true;
       }
       // Check for full access
-      if (permissions.some((p) => p.category === "all_access" || p.level === "full")) {
+      if (
+        permissions.some(
+          (p) => p.category === "all_access" || p.level === "full",
+        )
+      ) {
         return true;
       }
     }
-    
+
     return false;
   };
 
@@ -139,15 +122,16 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
   const hasLevel = (level: "read" | "write" | "admin" | "full"): boolean => {
     if (isSuperAdmin()) return true;
     if (!userRole) return false;
-    if (userRole === "partner_admin" || userRole === "admin_partner") return true;
-    
+    if (userRole === "partner_admin" || userRole === "admin_partner")
+      return true;
+
     // Check permissions array
     if (permissions && permissions.length > 0) {
       if (permissions.some((p) => p.level === level || p.level === "full")) {
         return true;
       }
     }
-    
+
     return false;
   };
 
@@ -155,19 +139,24 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
   const hasCategory = (category: string): boolean => {
     if (isSuperAdmin()) return true;
     if (!userRole) return false;
-    if (userRole === "partner_admin" || userRole === "admin_partner") return true;
-    
+    if (userRole === "partner_admin" || userRole === "admin_partner")
+      return true;
+
     // Check permissions array - most important for partners
     if (permissions && permissions.length > 0) {
       if (permissions.some((p) => p.category === category)) {
         return true;
       }
       // Check for full access
-      if (permissions.some((p) => p.category === "all_access" || p.level === "full")) {
+      if (
+        permissions.some(
+          (p) => p.category === "all_access" || p.level === "full",
+        )
+      ) {
         return true;
       }
     }
-    
+
     return false;
   };
 
@@ -175,11 +164,22 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
   const canRead = (category: string): boolean => {
     if (isSuperAdmin()) return true;
     // Allow if explicit permission found
-    if (permissions.some((p) => p.category === category && (p.level === "read" || p.level === "write" || p.level === "admin" || p.level === "full"))) {
+    if (
+      permissions.some(
+        (p) =>
+          p.category === category &&
+          (p.level === "read" ||
+            p.level === "write" ||
+            p.level === "admin" ||
+            p.level === "full"),
+      )
+    ) {
       return true;
     }
     // Allow if has full access
-    if (permissions.some((p) => p.category === "all_access" || p.level === "full")) {
+    if (
+      permissions.some((p) => p.category === "all_access" || p.level === "full")
+    ) {
       return true;
     }
     return false;
@@ -188,11 +188,19 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
   const canWrite = (category: string): boolean => {
     if (isSuperAdmin()) return true;
     // Allow if explicit write/admin/full permission found
-    if (permissions.some((p) => p.category === category && (p.level === "write" || p.level === "admin" || p.level === "full"))) {
+    if (
+      permissions.some(
+        (p) =>
+          p.category === category &&
+          (p.level === "write" || p.level === "admin" || p.level === "full"),
+      )
+    ) {
       return true;
     }
     // Allow if has full access
-    if (permissions.some((p) => p.category === "all_access" || p.level === "full")) {
+    if (
+      permissions.some((p) => p.category === "all_access" || p.level === "full")
+    ) {
       return true;
     }
     return false;

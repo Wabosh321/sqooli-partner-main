@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Title } from "../components/ui/Typography";
 import { Button } from "../components/ui/button";
@@ -7,24 +7,23 @@ import { Loading } from "../components/common/Loading";
 import { usePartnerAccess } from "../hooks/usePartnerAccess";
 import { useAuth } from "../hooks/useAuth";
 import { usePermissions } from "../hooks/usePermission";
-import { useUserCampaigns } from "../hooks/useUserCampaigns";
 import { PermissionWrapper } from "../components/common/PermissionWrapper";
 import { CampaignDetailDialog } from "../components/common/CampaignDetails";
 import { ConfirmDialog } from "../components/common/ConfirmationDialog";
 import { toast } from "sonner";
 import CreateCampaignWizard from "../components/common/CreateCampaign";
 import { isConvexUser } from "../types/auth.types";
+import { supabase } from "../lib/supabase";
 import {
   DASHBOARD_SECTION_CONFIG,
   getResponsivePadding,
   getSectionContainerStyle,
 } from "./SettingsSection";
 import { useDeviceSize } from "../hooks/useDeviceSize";
+
+import { useCampaigns } from "../application/campaign/useCampaigns";
 import { CampaignHeader, CampaignTable } from "../ui/campaign";
 import { Search, Menu, Plus, Lock, AlertCircle } from "lucide-react";
-
-// PHASE 4: Supabase integration for campaigns
-import { CampaignService } from "../infrastructure/campaign/campaign.service";
 
 export default function CampaignSection() {
   const [activeTab, setActiveTab] = useState<"active" | "expired" | "draft">(
@@ -48,78 +47,12 @@ export default function CampaignSection() {
   const canViewCampaigns = canRead("campaigns");
   const canManageCampaigns = canWrite("campaigns");
 
-  // PHASE 4: State for Supabase campaigns
-  const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [campaignsLoading, setCampaignsLoading] = useState(true);
+  const partnerId = (partner as any)?.id ?? (partner as any)?._id;
 
-  // PHASE 4: Load campaigns from Supabase and subscribe to real-time changes
-  useEffect(() => {
-    if (!partner?._id && !partner?.id) {
-      setCampaignsLoading(false);
-      return;
-    }
-
-    const partnerId = partner._id || partner.id;
-
-    // Initial load from Supabase
-    const loadCampaigns = async () => {
-      try {
-        setCampaignsLoading(true);
-        const fetchedCampaigns =
-          await CampaignService.fetchByPartner(partnerId);
-
-        // Map Supabase IDs to _id for compatibility
-        const mapped = (fetchedCampaigns || []).map((c) => ({
-          ...c,
-          _id: c.id,
-        }));
-
-        // Apply role-based filtering
-        const userRole = isConvexUser(user) ? user.role : "partner_member";
-        let filtered = mapped;
-
-        if (userRole === "admin_partner") {
-          filtered = mapped.filter((c) => c.partner_id === partnerId);
-        } else if (userRole === "partner_member") {
-          filtered = mapped.filter(
-            (c) =>
-              c.partner_id === partnerId &&
-              (c.created_by_user_id === user?.id || c.status === "pending"),
-          );
-        }
-
-        setCampaigns(filtered);
-      } catch (err) {
-        console.error("Error loading campaigns:", err);
-        toast.error("Failed to load campaigns");
-      } finally {
-        setCampaignsLoading(false);
-      }
-    };
-
-    loadCampaigns();
-
-    // PHASE 4: Subscribe to real-time campaign changes
-    const unsubscribe = CampaignService.subscribeToCampaignChanges(
-      partnerId,
-      (updatedCampaign) => {
-        // Update or add campaign in local state
-        setCampaigns((prev) => {
-          const existing = prev.findIndex((c) => c.id === updatedCampaign.id);
-          if (existing >= 0) {
-            const updated = [...prev];
-            updated[existing] = { ...updatedCampaign, _id: updatedCampaign.id };
-            return updated;
-          }
-          return [...prev, { ...updatedCampaign, _id: updatedCampaign.id }];
-        });
-      },
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, [user, partner]);
+  const { campaigns, loading: campaignsLoading } = useCampaigns(
+    partnerId,
+    !!partnerId && canViewCampaigns,
+  );
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "";
@@ -156,31 +89,24 @@ export default function CampaignSection() {
 
     setLoading(true);
     try {
-      // PHASE 4: Call RPC function to delete campaign
-      const result = await CampaignService.deleteCampaign(
-        campaign._id || campaign.id,
-      );
-
-      if (result.success) {
-        toast.success("Campaign deleted successfully");
-        // Remove from local state
-        setCampaigns((prev) =>
-          prev.filter((c) => c._id !== campaign._id && c.id !== campaign.id),
-        );
-        setShowConfirm(false);
-      } else {
-        toast.error(result.error || "Failed to delete campaign");
-      }
+      const { error } = await supabase
+        .from("campaigns")
+        .update({ status: "expired" })
+        .eq("id", campaign._id);
+      if (error) throw error;
+      toast.success("Campaign marked as expired");
+      setShowConfirm(false);
+      setCampaignToDelete(null);
     } catch (err) {
-      console.error("Error deleting campaign:", err);
-      toast.error("An error occurred while deleting the campaign");
+      console.error(err);
+      toast.error("Failed to update campaign");
     } finally {
       setLoading(false);
     }
   };
 
   // Permission guard
-  if (!canAccessCampaigns && partnerType && partnerType !== "affiliate") {
+  if (!canAccessCampaigns) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -201,14 +127,13 @@ export default function CampaignSection() {
   }
 
   return (
-    <div style={getSectionContainerStyle(padding)}>
-      <div
-        className="mx-auto space-y-6"
-        style={{
-          width: "max(88.33vw, 1272px)",
-          maxWidth: "100%",
-        }}
-      >
+    <div
+      style={{
+        ...getSectionContainerStyle(padding),
+        paddingTop: isMobile ? "16px" : "32px",
+      }}
+    >
+      <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <Title>Campaigns</Title>
           <div />

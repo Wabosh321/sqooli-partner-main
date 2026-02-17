@@ -1,0 +1,2 @@
+import{s as c}from"./supabase-Cu0qjYwd.js";import{insertRow as f}from"./genericHelpers-B-O-sM_H.js";async function n(r){return f("audit_logs",r)}async function o(r,e){try{let t=c.from("audit_logs").select("*").eq("convex_id",r);e?.limit&&(t=t.limit(e.limit)),e?.offset&&(t=t.range(e.offset,e.offset+(e.limit??10)-1));const{data:a,error:i}=await t.order("created_at",{ascending:!1});return{data:a,error:i}}catch(t){return{data:null,error:t}}}export{n as createActivityLog,o as getActivityLogs};
+//# sourceMappingURL=auditCRUD-CN8oLjpd.js.map

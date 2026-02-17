@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
 import React from "react";
-import { useIsMobile } from "../../hooks/use-mobile";
+import { useIsMobile } from "../../../hooks/use-mobile";
 
 export type SidebarState = "expanded" | "collapsed";
 
@@ -19,7 +19,8 @@ const SidebarContext = React.createContext<SidebarContextProps | null>(null);
 
 export function useSidebarContext() {
   const ctx = React.useContext(SidebarContext);
-  if (!ctx) throw new Error("useSidebar must be used within a SidebarProvider.");
+  if (!ctx)
+    throw new Error("useSidebar must be used within a SidebarProvider.");
   return ctx;
 }
 
@@ -41,7 +42,8 @@ export function SidebarProvider({
 
   const setOpen = React.useCallback(
     (value: boolean | ((prev: boolean) => boolean)) => {
-      const openState = typeof value === "function" ? (value as any)(open) : value;
+      const openState =
+        typeof value === "function" ? (value as any)(open) : value;
       if (setOpenProp) setOpenProp(openState);
       else _setOpen(openState);
       try {
@@ -50,7 +52,7 @@ export function SidebarProvider({
         // ignore (SSR-safe)
       }
     },
-    [setOpenProp, open]
+    [setOpenProp, open],
   );
 
   const toggleSidebar = React.useCallback(() => {
@@ -71,14 +73,26 @@ export function SidebarProvider({
     return undefined;
   }, [toggleSidebar]);
 
-  const state = open ? "expanded" as SidebarState : "collapsed" as SidebarState;
+  const state = open
+    ? ("expanded" as SidebarState)
+    : ("collapsed" as SidebarState);
 
   const value = React.useMemo(
-    () => ({ state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    () => ({
+      state,
+      open,
+      setOpen,
+      isMobile,
+      openMobile,
+      setOpenMobile,
+      toggleSidebar,
+    }),
+    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
   );
 
-  return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
+  return (
+    <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>
+  );
 }
 
 export default SidebarContext;

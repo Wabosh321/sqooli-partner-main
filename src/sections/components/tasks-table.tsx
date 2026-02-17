@@ -2,15 +2,7 @@
 
 import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface Task {
-  id: string;
-  dateCreated: string;
-  referenceNo: string;
-  taskName: string;
-  status?: "pending" | "approved" | "declined";
-  dateCompleted?: string;
-}
+import { Task } from "../../types/auth.types";
 
 interface TasksTableProps {
   tasks: Task[];
@@ -31,6 +23,16 @@ const getStatusLabel = (status?: string) =>
   !status || status === "pending"
     ? "Pending"
     : status[0].toUpperCase() + status.slice(1);
+
+// Helper to format date
+const formatDate = (dateString?: string | null): string => {
+  if (!dateString) return "-";
+  try {
+    return new Date(dateString).toLocaleDateString();
+  } catch {
+    return dateString;
+  }
+};
 
 export function TasksTable({
   tasks,
@@ -67,21 +69,21 @@ export function TasksTable({
                 <div>
                   <p className="text-xs text-slate-600 mb-1">Date Created</p>
                   <p className="text-sm text-slate-900 font-medium">
-                    {task.dateCreated}
+                    {formatDate(task.date_created)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-xs text-slate-600 mb-1">Reference No</p>
                   <p className="text-sm text-slate-900 font-medium">
-                    {task.referenceNo}
+                    {task.reference_no || "-"}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-xs text-slate-600 mb-1">Task Name</p>
                   <p className="text-sm text-slate-900 font-medium">
-                    {task.taskName}
+                    {task.task_name}
                   </p>
                 </div>
 
@@ -103,7 +105,7 @@ export function TasksTable({
                         Date Completed
                       </p>
                       <p className="text-sm text-slate-900 font-medium">
-                        {task.dateCompleted || "-"}
+                        {formatDate(task.completed_at)}
                       </p>
                     </div>
                   </>

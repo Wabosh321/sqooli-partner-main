@@ -1,7 +1,6 @@
 /**
  * Infrastructure Layer: Wallet Data Access Service
- * Encapsulates Supabase queries, RPC calls, and real-time subscriptions
- * Phase 3: Enhanced with transaction recording, withdrawal processing, and real-time updates
+ * Encapsulates Supabase queries and error handling
  */
 
 import { supabase } from "../../lib/supabase";
@@ -11,51 +10,19 @@ export interface IWalletService {
   fetchCampaigns(partnerId: string): Promise<Campaign[]>;
   fetchTransactions(partnerId: string): Promise<Transaction[]>;
   fetchWithdrawals(partnerId: string): Promise<Withdrawal[]>;
-  fetchWalletBalance(
+  fetchWalletBalance(partnerId: string): Promise<number>;
+  countTransactions(partnerId: string): Promise<number>;
+  fetchDashboardMetrics(
     partnerId: string,
-  ): Promise<{ balance: number; pending: number } | null>;
-  recordTransaction(input: {
-    walletId: string;
-    partnerId: string;
-    userId: string;
-    campaignId?: string;
-    transactionType: "earnings" | "bonus" | "referral" | "adjustment";
-    amount: number;
-    description?: string;
-    referenceNumber?: string;
-    metadata?: Record<string, any>;
-  }): Promise<{
-    success: boolean;
-    transactionId?: string;
-    newBalance?: number;
-    error?: string;
-  }>;
-  requestWithdrawal(input: {
-    walletId: string;
-    partnerId: string;
-    userId: string;
-    amount: number;
-    method: "mpesa" | "bank_transfer" | "paybill";
-    details: Record<string, any>;
-  }): Promise<{ success: boolean; withdrawalId?: string; error?: string }>;
-  processWithdrawal(
-    withdrawalId: string,
-    status: "approved" | "rejected" | "processing" | "completed" | "failed",
-    notes?: string,
-    mpesaRef?: string,
-  ): Promise<{ success: boolean; newBalance?: number; error?: string }>;
-  subscribeToWalletChanges(
-    partnerId: string,
-    callback: (data: any) => void,
-  ): () => void;
-  subscribeToTransactions(
-    partnerId: string,
-    callback: (data: any) => void,
-  ): () => void;
-  subscribeToWithdrawals(
-    partnerId: string,
-    callback: (data: any) => void,
-  ): () => void;
+    days: number,
+  ): Promise<
+    Array<{
+      date: string;
+      earnings: number;
+      withdrawals: number;
+      engagements: number;
+    }>
+  >;
 }
 
 export class WalletService implements IWalletService {
@@ -129,244 +96,179 @@ export class WalletService implements IWalletService {
   }
 
   /**
-   * Fetch wallet balance and pending withdrawals for a partner
+   * Fetch wallet balance for a partner
+   * Aggregates sum of all earnings minus withdrawals
    */
-  async fetchWalletBalance(
-    partnerId: string,
-  ): Promise<{ balance: number; pending: number } | null> {
+  async fetchWalletBalance(partnerId: string): Promise<number> {
     try {
-      const { data, error } = await supabase
-        .from("wallets")
-        .select("balance, pending_withdrawals")
+      const { data: earnings, error: earningsError } = await supabase
+        .from("transactions")
+        .select("amount")
         .eq("partner_id", partnerId)
-        .single();
+        .eq("transaction_type", "earnings");
 
-      if (error) {
-        console.error("Error fetching wallet balance:", error);
-        return null;
+      if (earningsError) {
+        console.error("Error fetching earnings:", earningsError);
+        return 0;
       }
 
-      return {
-        balance: data?.balance || 0,
-        pending: data?.pending_withdrawals || 0,
-      };
+      const totalEarnings = ((earnings || []) as any[]).reduce(
+        (sum, tx) => sum + (Number(tx.amount) || 0),
+        0,
+      );
+
+      const { data: withdrawals, error: withdrawalsError } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("partner_id", partnerId)
+        .eq("transaction_type", "withdrawal");
+
+      if (withdrawalsError) {
+        console.error("Error fetching withdrawals:", withdrawalsError);
+        return totalEarnings;
+      }
+
+      const totalWithdrawals = ((withdrawals || []) as any[]).reduce(
+        (sum, tx) => sum + (Number(tx.amount) || 0),
+        0,
+      );
+
+      return totalEarnings - totalWithdrawals;
     } catch (err) {
       console.error("Unexpected error fetching wallet balance:", err);
-      return null;
+      return 0;
     }
   }
 
   /**
-   * Record a transaction using RPC function
-   * Supports: earnings, bonuses, referrals, adjustments
+   * Count transactions for a partner
    */
-  async recordTransaction(input: {
-    walletId: string;
-    partnerId: string;
-    userId: string;
-    campaignId?: string;
-    transactionType: "earnings" | "bonus" | "referral" | "adjustment";
-    amount: number;
-    description?: string;
-    referenceNumber?: string;
-    metadata?: Record<string, any>;
-  }): Promise<{
-    success: boolean;
-    transactionId?: string;
-    newBalance?: number;
-    error?: string;
-  }> {
+  async countTransactions(partnerId: string): Promise<number> {
     try {
-      const { data, error } = await supabase.rpc("rpc_record_transaction", {
-        p_wallet_id: input.walletId,
-        p_partner_id: input.partnerId,
-        p_user_id: input.userId,
-        p_campaign_id: input.campaignId,
-        p_transaction_type: input.transactionType,
-        p_amount: input.amount,
-        p_description: input.description,
-        p_reference_number: input.referenceNumber,
-        p_metadata: input.metadata,
-      });
+      const { count, error } = await supabase
+        .from("transactions")
+        .select("id", { count: "exact", head: true })
+        .eq("partner_id", partnerId);
 
       if (error) {
-        console.error("Error recording transaction:", error);
-        return { success: false, error: error.message };
+        console.error("Error counting transactions:", error);
+        return 0;
       }
 
-      return {
-        success: data?.success || false,
-        transactionId: data?.transaction_id,
-        newBalance: data?.new_balance,
-        error: data?.error,
-      };
+      return count || 0;
     } catch (err) {
-      console.error("Unexpected error recording transaction:", err);
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
-      };
+      console.error("Unexpected error counting transactions:", err);
+      return 0;
     }
   }
 
   /**
-   * Request a withdrawal using RPC function
+   * Fetch dashboard metrics (30-day aggregates)
+   * Returns daily aggregates by transaction type
    */
-  async requestWithdrawal(input: {
-    walletId: string;
-    partnerId: string;
-    userId: string;
-    amount: number;
-    method: "mpesa" | "bank_transfer" | "paybill";
-    details: Record<string, any>;
-  }): Promise<{ success: boolean; withdrawalId?: string; error?: string }> {
+  async fetchDashboardMetrics(
+    partnerId: string,
+    days: number = 30,
+  ): Promise<
+    Array<{
+      date: string;
+      earnings: number;
+      withdrawals: number;
+      engagements: number;
+    }>
+  > {
     try {
-      const { data, error } = await supabase.rpc("rpc_request_withdrawal", {
-        p_wallet_id: input.walletId,
-        p_partner_id: input.partnerId,
-        p_user_id: input.userId,
-        p_amount: input.amount,
-        p_method: input.method,
-        p_details: input.details,
-      });
+      const since = new Date();
+      since.setDate(since.getDate() - days);
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("id, amount, transaction_type, created_at")
+        .eq("partner_id", partnerId)
+        .gte("created_at", since.toISOString())
+        .order("created_at", { ascending: true });
 
       if (error) {
-        console.error("Error requesting withdrawal:", error);
-        return { success: false, error: error.message };
+        console.error("Error fetching dashboard metrics:", error);
+        return [];
       }
 
-      return {
-        success: data?.success || false,
-        withdrawalId: data?.withdrawal_id,
-        error: data?.error,
-      };
-    } catch (err) {
-      console.error("Unexpected error requesting withdrawal:", err);
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
-      };
-    }
-  }
+      // Generate date buckets
+      const dayBuckets: Record<
+        string,
+        {
+          date: string;
+          earnings: number;
+          withdrawals: number;
+          engagements: number;
+        }
+      > = {};
 
-  /**
-   * Process a withdrawal (approve/reject/complete) using RPC function
-   */
-  async processWithdrawal(
-    withdrawalId: string,
-    status: "approved" | "rejected" | "processing" | "completed" | "failed",
-    notes?: string,
-    mpesaRef?: string,
-  ): Promise<{ success: boolean; newBalance?: number; error?: string }> {
-    try {
-      const { data, error } = await supabase.rpc("rpc_process_withdrawal", {
-        p_withdrawal_id: withdrawalId,
-        p_status: status,
-        p_notes: notes,
-        p_mpesa_ref: mpesaRef,
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const normalizedDate = new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+        );
+        const dateKey = normalizedDate.toISOString().split("T")[0];
+        const formattedDate = normalizedDate.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+        });
+
+        dayBuckets[dateKey] = {
+          date: formattedDate,
+          earnings: 0,
+          withdrawals: 0,
+          engagements: 0,
+        };
+      }
+
+      // Aggregate transactions
+      const transactions = (data || []) as Array<{
+        id: string;
+        amount: number;
+        transaction_type: string;
+        created_at: string;
+      }>;
+
+      transactions.forEach((tx) => {
+        const dateKey = (tx.created_at || "").split("T")[0];
+        if (!dateKey || !dayBuckets[dateKey]) return;
+
+        const amount = Number(tx.amount || 0);
+        const bucket = dayBuckets[dateKey];
+
+        if (
+          tx.transaction_type === "earnings" ||
+          tx.transaction_type === "earn"
+        ) {
+          bucket.earnings += amount;
+        } else if (
+          tx.transaction_type === "withdrawal" ||
+          tx.transaction_type === "withdraw"
+        ) {
+          bucket.withdrawals += amount;
+        } else if (
+          tx.transaction_type === "engagement" ||
+          tx.transaction_type === "engage"
+        ) {
+          bucket.engagements += amount;
+        }
       });
 
-      if (error) {
-        console.error("Error processing withdrawal:", error);
-        return { success: false, error: error.message };
-      }
-
-      return {
-        success: data?.success || false,
-        newBalance: data?.new_balance,
-        error: data?.error,
-      };
+      // Return as sorted array
+      return Object.values(dayBuckets).sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return dateA - dateB;
+      });
     } catch (err) {
-      console.error("Unexpected error processing withdrawal:", err);
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
-      };
+      console.error("Unexpected error fetching dashboard metrics:", err);
+      return [];
     }
-  }
-
-  /**
-   * Subscribe to real-time wallet balance changes
-   */
-  subscribeToWalletChanges(
-    partnerId: string,
-    callback: (data: any) => void,
-  ): () => void {
-    const subscription = supabase
-      .channel(`wallets:partner_id=eq.${partnerId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "wallets",
-          filter: `partner_id=eq.${partnerId}`,
-        },
-        (payload) => {
-          callback(payload.new || payload.old);
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }
-
-  /**
-   * Subscribe to real-time transaction inserts
-   */
-  subscribeToTransactions(
-    partnerId: string,
-    callback: (data: any) => void,
-  ): () => void {
-    const subscription = supabase
-      .channel(`transactions:partner_id=eq.${partnerId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "transactions",
-          filter: `partner_id=eq.${partnerId}`,
-        },
-        (payload) => {
-          callback(payload.new);
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }
-
-  /**
-   * Subscribe to real-time withdrawal status changes
-   */
-  subscribeToWithdrawals(
-    partnerId: string,
-    callback: (data: any) => void,
-  ): () => void {
-    const subscription = supabase
-      .channel(`withdrawals:partner_id=eq.${partnerId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "withdrawals",
-          filter: `partner_id=eq.${partnerId}`,
-        },
-        (payload) => {
-          callback(payload.new || payload.old);
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
   }
 }
 

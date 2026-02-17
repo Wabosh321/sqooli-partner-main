@@ -1,9 +1,14 @@
-import { Dialog, DialogContent, DialogHeader } from "../ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+} from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Card, CardContent } from "../ui/card";
 import { X, Download, Eye, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
 
 interface CampaignAssetsProps {
   campaign: any | null;
@@ -11,55 +16,61 @@ interface CampaignAssetsProps {
   onClose: () => void;
 }
 
-export function CampaignAssets({
-  campaign,
-  open,
-  onClose,
-}: CampaignAssetsProps) {
+export function CampaignAssets({ campaign, open, onClose }: CampaignAssetsProps) {
   const [assets, setAssets] = useState<any[] | undefined>(undefined);
 
   useEffect(() => {
     if (!campaign || !open) return;
+    let mounted = true;
+    (async () => {
+      try {
+        let data: any[] | null = null;
+        let error: any = null;
 
-    try {
-      // Generate demo assets from campaign data
-      const campaignId = campaign.id || campaign._id;
-      const demoAssets = [
-        {
-          id: `${campaignId}-qr-1`,
-          _id: `${campaignId}-qr-1`,
-          campaign_id: campaignId,
-          type: "whatsapp_qr",
-          content: `WhatsApp QR Code for ${campaign.name}\nPromo: ${campaign.promo_code}\nWhatsApp: ${campaign.whatsapp_number}`,
-          generated_at: new Date().toISOString(),
-        },
-        {
-          id: `${campaignId}-qr-2`,
-          _id: `${campaignId}-qr-2`,
-          campaign_id: campaignId,
-          type: "payment_qr",
-          content: `Payment QR Code for ${campaign.name}\nAmount: KES ${campaign.bundled_offers?.total_price || 0}\nLessons: ${campaign.bundled_offers?.min_lessons || 10}`,
-          generated_at: new Date().toISOString(),
-        },
-      ];
+        if (campaign.id && campaign._id) {
+          const cond = `campaign_id.eq.${campaign.id},legacy_convex_id.eq.${campaign._id}`;
+          const res = await supabase.from("assets").select("*").or(cond);
+          data = res.data as any[] | null;
+          error = res.error;
+        } else if (campaign.id) {
+          const res = await supabase.from("assets").select("*").eq("campaign_id", campaign.id);
+          data = res.data as any[] | null;
+          error = res.error;
+        } else if (campaign._id) {
+          const res = await supabase.from("assets").select("*").eq("legacy_convex_id", campaign._id);
+          data = res.data as any[] | null;
+          error = res.error;
+        }
 
-      setAssets(demoAssets);
-    } catch (err) {
-      console.error("Failed to load assets", err);
-      setAssets([]);
-    }
+        if (error) throw error;
+        if (!mounted) return;
+
+        const mapped = (data || []).map((a) => ({
+          ...a,
+          _id: (a as any)._id || (a as any).id,
+          generated_at: (a as any).generated_at || (a as any).created_at,
+        }));
+
+        setAssets(mapped);
+      } catch (err) {
+        console.error("Failed to load assets", err);
+        if (!mounted) return;
+        setAssets([]);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, [campaign, open]);
 
   if (!campaign) return null;
 
   // Group assets by type
-  const whatsAppAssets =
-    assets?.filter((asset) => asset.type === "whatsapp_qr") || [];
-  const howToPayAssets =
-    assets?.filter((asset) => asset.type === "payment_qr") || [];
+  const whatsAppAssets = assets?.filter(asset => asset.content === "WhatsApp QR Code") || [];
+  const howToPayAssets = assets?.filter(asset => asset.content === "Payment QR Code") || [];
 
   const handleDownload = (url: string, assetType: string) => {
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
     link.download = `${campaign.name}_${assetType}_${Date.now()}`;
     document.body.appendChild(link);
@@ -68,7 +79,7 @@ export function CampaignAssets({
   };
 
   const handlePreview = (url: string) => {
-    window.open(url, "_blank");
+    window.open(url, '_blank');
   };
 
   const renderAssetCard = (asset: any) => (
@@ -76,18 +87,16 @@ export function CampaignAssets({
       <CardContent className="pt-4 pb-4">
         <div className="flex items-start gap-4">
           {/* Asset Preview */}
-          <div className="w-32 h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+          <div className="w-32 h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0">
             {asset.url ? (
-              <img
-                src={asset.url}
+              <img 
+                src={asset.url} 
                 alt={`${asset.type} asset`}
                 className="w-full h-full object-cover"
               />
             ) : asset.content ? (
               <div className="w-full h-full flex items-center justify-center p-2 text-xs text-muted-foreground overflow-hidden">
-                <div className="line-clamp-6 text-center whitespace-pre-wrap">
-                  {asset.content}
-                </div>
+                <div className="line-clamp-6">{asset.content}</div>
               </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -99,14 +108,13 @@ export function CampaignAssets({
           {/* Asset Info */}
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-foreground mb-1 capitalize">
-              {asset.type.replace(/_/g, " ")}
+              {asset.type.replace('_', ' ')}
             </h4>
             <p className="text-sm text-muted-foreground mb-3">
-              Generated{" "}
-              {new Date(asset.generated_at).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
+              Generated {new Date(asset.generated_at).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
               })}
             </p>
 
@@ -154,11 +162,8 @@ export function CampaignAssets({
   );
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent
-        className="!max-w-4xl sm:!max-w-4xl max-h-[90vh] overflow-y-auto"
-        showCloseButton={false}
-      >
+    <Dialog  open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="!max-w-4xl sm:!max-w-4xl max-h-[90vh] overflow-y-auto" showCloseButton={false}>
         <DialogHeader className="flex flex-row items-start justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>Campaigns</span>
@@ -179,9 +184,7 @@ export function CampaignAssets({
 
         <div className="space-y-4">
           <div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">
-              Campaign Assets
-            </h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Campaign Assets</h2>
             <p className="text-sm text-muted-foreground">
               View and download promotional materials for this campaign
             </p>
@@ -201,9 +204,7 @@ export function CampaignAssets({
               {whatsAppAssets.length === 0 ? (
                 <Card className="border border-muted">
                   <CardContent className="pt-12 pb-12 text-center">
-                    <p className="text-muted-foreground">
-                      No QR code assets available
-                    </p>
+                    <p className="text-muted-foreground">No QR code assets available</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -217,9 +218,7 @@ export function CampaignAssets({
               {howToPayAssets.length === 0 ? (
                 <Card className="border border-muted">
                   <CardContent className="pt-12 pb-12 text-center">
-                    <p className="text-muted-foreground">
-                      No payment instruction assets available
-                    </p>
+                    <p className="text-muted-foreground">No payment instruction assets available</p>
                   </CardContent>
                 </Card>
               ) : (

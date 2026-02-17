@@ -4,11 +4,7 @@ import { AlertCircle } from "lucide-react";
 import { NoCampaignCard } from "../components/common/NoCampaignCard";
 import { supabase } from "../lib/supabase";
 import { useState, useEffect } from "react";
-import {
-  DASHBOARD_SECTION_CONFIG,
-  getResponsivePadding,
-  getSectionContainerStyle,
-} from "./SettingsSection";
+import { DASHBOARD_SECTION_CONFIG, getResponsivePadding, getSectionContainerStyle } from "./SettingsSection";
 import { useDeviceSize } from "../hooks/useDeviceSize";
 
 export default function PaymentsSection() {
@@ -27,12 +23,8 @@ export default function PaymentsSection() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900">
-            Access Restricted
-          </h3>
-          <p className="text-gray-500 mt-2">
-            Your partner tier doesn't include payment access.
-          </p>
+          <h3 className="text-lg font-semibold text-gray-900">Access Restricted</h3>
+          <p className="text-gray-500 mt-2">Your partner tier doesn't include payment access.</p>
         </div>
       </div>
     );
@@ -72,17 +64,7 @@ export default function PaymentsSection() {
 
   return (
     <div style={getSectionContainerStyle(padding)}>
-      <div
-        className="mx-auto space-y-6"
-        style={{
-          width: "max(88.33vw, 1272px)",
-          maxWidth: "100%",
-        }}
-      >
-        {partner && (!campaigns || campaigns.length === 0) && (
-          <NoCampaignCard />
-        )}
-      </div>
+      {partner && (!campaigns || campaigns.length === 0) && <NoCampaignCard />}
     </div>
   );
 }

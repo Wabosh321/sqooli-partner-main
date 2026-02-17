@@ -1,11 +1,15 @@
-// Partner Type System - TypeScript Definitions
-// Defines all partner types, roles, and permissions
+/**
+ * Partner Type System - TypeScript Definitions
+ * Defines all partner types, roles, and permissions
+ */
+
+// ============================================================================
+// PARTNER TYPE DEFINITIONS
+// ============================================================================
 
 export enum PartnerTypeSlug {
-  AFFILIATE = "affiliate",
   MEDIA = "media",
-  CORPORATE = "corporate",
-  INSTITUTIONAL = "institutional",
+  BENEFICIARY = "beneficiary",
 }
 
 export interface PartnerType {
@@ -19,17 +23,11 @@ export interface PartnerType {
   updated_at: string;
 }
 
+// ============================================================================
+// PARTNER TYPE CONFIGURATIONS
+// ============================================================================
+
 export const PARTNER_TYPE_CONFIG: Record<PartnerTypeSlug, PartnerType> = {
-  [PartnerTypeSlug.AFFILIATE]: {
-    id: "affiliate-type",
-    name: "Affiliate Partner",
-    slug: PartnerTypeSlug.AFFILIATE,
-    description: "Individual Affiliates & Agents - grassroots distribution",
-    access_level: 25,
-    default_commission_rate: 5.0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
   [PartnerTypeSlug.MEDIA]: {
     id: "media-type",
     name: "Media Partner",
@@ -40,27 +38,21 @@ export const PARTNER_TYPE_CONFIG: Record<PartnerTypeSlug, PartnerType> = {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
-  [PartnerTypeSlug.CORPORATE]: {
-    id: "corporate-type",
-    name: "Corporate Partner",
-    slug: PartnerTypeSlug.CORPORATE,
-    description: "B2B Employee Benefits - employee welfare integration",
-    access_level: 40,
+  [PartnerTypeSlug.BENEFICIARY]: {
+    id: "beneficiary-type",
+    name: "Beneficiary",
+    slug: PartnerTypeSlug.BENEFICIARY,
+    description: "Beneficiary organizations (schools, NGOs, community groups)",
+    access_level: 45,
     default_commission_rate: 0.0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
-  [PartnerTypeSlug.INSTITUTIONAL]: {
-    id: "institutional-type",
-    name: "Institutional Partner",
-    slug: PartnerTypeSlug.INSTITUTIONAL,
-    description: "Churches, NGOs, Community Organizations - physical anchors",
-    access_level: 45,
-    default_commission_rate: 7.5,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
 };
+
+// ============================================================================
+// PARTNER ROLES BY TYPE
+// ============================================================================
 
 export enum PartnerRole {
   // Affiliate roles
@@ -84,26 +76,21 @@ export enum PartnerRole {
 }
 
 export const PARTNER_ROLES_BY_TYPE: Record<PartnerTypeSlug, PartnerRole[]> = {
-  [PartnerTypeSlug.AFFILIATE]: [
-    PartnerRole.AFFILIATE_AGENT,
-    PartnerRole.AFFILIATE_MANAGER,
-  ],
   [PartnerTypeSlug.MEDIA]: [
     PartnerRole.MEDIA_MANAGER,
     PartnerRole.MEDIA_ADMIN,
     PartnerRole.CONTENT_CREATOR,
   ],
-  [PartnerTypeSlug.CORPORATE]: [
-    PartnerRole.CORPORATE_ADMIN,
-    PartnerRole.HR_MANAGER,
-    PartnerRole.FINANCE_MANAGER,
-  ],
-  [PartnerTypeSlug.INSTITUTIONAL]: [
+  [PartnerTypeSlug.BENEFICIARY]: [
     PartnerRole.HUB_MANAGER,
     PartnerRole.HUB_ADMIN,
     PartnerRole.COMMUNITY_COORDINATOR,
   ],
 };
+
+// ============================================================================
+// PERMISSIONS BY PARTNER TYPE
+// ============================================================================
 
 export enum PartnerPermission {
   // Common
@@ -141,13 +128,6 @@ export const PERMISSIONS_BY_PARTNER_TYPE: Record<
   PartnerTypeSlug,
   PartnerPermission[]
 > = {
-  [PartnerTypeSlug.AFFILIATE]: [
-    PartnerPermission.TRACK_REFERRALS,
-    PartnerPermission.VIEW_EARNINGS,
-    PartnerPermission.ACCESS_MARKETING_MATERIALS,
-    PartnerPermission.BASIC_ANALYTICS,
-    PartnerPermission.VIEW_REFERRAL_DATA,
-  ],
   [PartnerTypeSlug.MEDIA]: [
     PartnerPermission.TRACK_REFERRALS,
     PartnerPermission.VIEW_EARNINGS,
@@ -158,17 +138,7 @@ export const PERMISSIONS_BY_PARTNER_TYPE: Record<
     PartnerPermission.VIEW_REFERRAL_DATA,
     PartnerPermission.VIEW_REVENUE_SHARE,
   ],
-  [PartnerTypeSlug.CORPORATE]: [
-    PartnerPermission.BULK_ENROLLMENT,
-    PartnerPermission.VIEW_EARNINGS,
-    PartnerPermission.ADVANCED_ANALYTICS,
-    PartnerPermission.USAGE_REPORTS,
-    PartnerPermission.DEPARTMENT_REPORTING,
-    PartnerPermission.EMPLOYEE_PORTAL,
-    PartnerPermission.PAYROLL_INTEGRATION,
-    PartnerPermission.BULK_MANAGEMENT,
-  ],
-  [PartnerTypeSlug.INSTITUTIONAL]: [
+  [PartnerTypeSlug.BENEFICIARY]: [
     PartnerPermission.MANAGE_HUB,
     PartnerPermission.ENROLL_MEMBERS,
     PartnerPermission.TRACK_PERFORMANCE,
@@ -181,15 +151,21 @@ export const PERMISSIONS_BY_PARTNER_TYPE: Record<
   ],
 };
 
+// ============================================================================
+// PERMISSION ADMIN ROLES (who can grant permissions)
+// ============================================================================
+
 export const ADMIN_ROLES_FOR_PARTNER_TYPE: Record<
   PartnerTypeSlug,
   PartnerRole[]
 > = {
-  [PartnerTypeSlug.AFFILIATE]: [PartnerRole.AFFILIATE_MANAGER],
   [PartnerTypeSlug.MEDIA]: [PartnerRole.MEDIA_ADMIN],
-  [PartnerTypeSlug.CORPORATE]: [PartnerRole.CORPORATE_ADMIN],
-  [PartnerTypeSlug.INSTITUTIONAL]: [PartnerRole.HUB_ADMIN],
+  [PartnerTypeSlug.BENEFICIARY]: [PartnerRole.HUB_ADMIN],
 };
+
+// ============================================================================
+// PARTNER DASHBOARD SECTIONS BY TYPE
+// ============================================================================
 
 export type DashboardSection =
   | "campaigns"
@@ -198,6 +174,7 @@ export type DashboardSection =
   | "users"
   | "programs"
   | "settings"
+  | "tasks"
   | "analytics"
   | "bulk_management"
   | "community"
@@ -207,7 +184,6 @@ export const DASHBOARD_SECTIONS_BY_PARTNER_TYPE: Record<
   PartnerTypeSlug,
   DashboardSection[]
 > = {
-  [PartnerTypeSlug.AFFILIATE]: ["wallet", "analytics", "settings"],
   [PartnerTypeSlug.MEDIA]: [
     "campaigns",
     "wallet",
@@ -215,23 +191,21 @@ export const DASHBOARD_SECTIONS_BY_PARTNER_TYPE: Record<
     "analytics",
     "settings",
   ],
-  [PartnerTypeSlug.CORPORATE]: [
-    "bulk_management",
-    "reports",
-    "analytics",
-    "users",
-    "settings",
-  ],
-  [PartnerTypeSlug.INSTITUTIONAL]: [
+  [PartnerTypeSlug.BENEFICIARY]: [
     "hub_operations",
     "community",
     "reports",
     "analytics",
     "wallet",
     "programs",
+    "tasks",
     "settings",
   ],
 };
+
+// ============================================================================
+// EXTENDED PARTNER INTERFACE
+// ============================================================================
 
 export interface PartnerWithType {
   id: string;
@@ -257,6 +231,10 @@ export interface PartnerWithType {
   updated_at: string;
 }
 
+// ============================================================================
+// PARTNER USER INTERFACE (for team members within a partner)
+// ============================================================================
+
 export interface PartnerUser {
   id: string;
   partner_id: string;
@@ -267,4 +245,42 @@ export interface PartnerUser {
   invited_at: string;
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================================
+// TASK TYPES FOR PARTNER TASKS MANAGEMENT
+// ============================================================================
+
+export type TaskStatus = "pending" | "approved" | "declined";
+
+export interface PartnerTask {
+  id: string;
+  campaign_id: string;
+  created_by_user_id: string | null;
+  approver_id: string | null;
+  task_name: string;
+  status: TaskStatus;
+  reference_no: string | null;
+  description: string | null;
+  channel: string | null;
+  sub_channel: string | null;
+  date_created: string | null;
+  completed_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  partner_id: string;
+}
+
+export interface PartnerTaskDetails extends PartnerTask {
+  campaignName?: string;
+  campaign_description?: string;
+  program?: string;
+  start_date?: string;
+  end_date?: string;
+  duration?: string;
+  created_by?: string;
+  approver?: string;
+  date_completed?: string;
+  qr_code?: string;
+  promo_code?: string;
 }

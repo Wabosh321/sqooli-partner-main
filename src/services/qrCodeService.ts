@@ -183,4 +183,3 @@ export function socialPostGenerator({
 
   return posterUrl;
 }
-

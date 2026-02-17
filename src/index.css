@@ -1,8 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&display=swap');
+
 @import "tailwindcss";
+
+@theme inline {
+  /* Dashboard Design Tokens */
+  --color-dashboard-bg: #f6f7f9;
+  --color-white: #ffffff;
+  --color-wallet-card-bg: #e1eefa;
+  --color-primary-blue: #3498db;
+  --color-text-primary: #000007;
+  --color-text-secondary: #1c1c1c;
+  --color-text-muted: #475467;
+  --color-text-gray: #344054;
+  --color-border: #eaecf0;
+  --color-orange: #e36f04;
+  --color-green: #27ae60;
+  --color-green-dark: #12b76a;
+  --color-green-light: #ecfdf3;
+  --color-green-badge: #027a48;
+  --color-purple: #6941c6;
+  --color-purple-light: #f9f5ff;
+  --color-purple-dark: #9f0bc1;
+  
+  /* Spacing & Sizing */
+  --radius-card: 12px;
+  --radius-button: 8px;
+  --radius-button-round: 30px;
+  --spacing-default: 16px;
+}
 
 @layer base {
   button:not([disabled]),
   [role="button"]:not([disabled]) {
     cursor: pointer;
+  }
+  
+  body {
+    font-family: 'Outfit', sans-serif;
   }
 }

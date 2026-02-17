@@ -4,10 +4,8 @@ import React, { useState } from "react";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
-import partnerImage from "../assets/Frame 2085664798.png";
-import schoolImage from "../assets/Frame 2085664799.png";
-import teacherImage from "../assets/Frame 2085664800.png";
 
 export default function SelectAccount() {
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
@@ -18,63 +16,123 @@ export default function SelectAccount() {
     {
       id: "partner",
       label: "Partner",
-      image: partnerImage,
+      image: "/images/frame-2085664798.png",
     },
     {
       id: "school",
       label: "School",
-      image: schoolImage,
+      image: "/images/frame-2085664799.png",
     },
     {
       id: "teacher",
       label: "Teacher",
-      image: teacherImage,
+      image: "/images/frame-2085664800.png",
     },
   ];
 
-  const verifyAccount = (accountId: string) => {
+  const verifyAccount = async (accountId: string): Promise<boolean> => {
     if (!user) {
+      console.error("SelectAccount: No authenticated user found");
       toast.error("No authenticated user found");
       return false;
     }
 
-    // JSON-based account verification
-    // Based on partner_type from JSON user
-    if (accountId === "partner") {
-      return partner ? true : false;
-    }
+    try {
+      // Ensure we pass the Supabase auth user id (session user id) to the RPC
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    // School: check if partner type is institutional/corporate
-    if (accountId === "school") {
-      if (!partner) return false;
-      const partnerType = (partner as any)?.partner_type || "";
-      return ["institutional", "corporate", "school"].includes(
-        partnerType.toLowerCase()
+      const authId = session?.user?.id;
+      if (!authId) {
+        console.error("SelectAccount: No auth session found for user");
+        toast.error("No authenticated session found");
+        return false;
+      }
+
+      console.debug("SelectAccount: Verifying account type", {
+        auth_id: authId,
+        account_type: accountId,
+      });
+
+      // PHASE 2: Use verify_account_type RPC instead of inline queries
+      const { data: result, error: rpcError } = await supabase.rpc(
+        "verify_account_type",
+        {
+          p_auth_id: authId,
+          p_account_type: accountId,
+        },
       );
-    }
 
-    // Teacher: check if user role is teacher
-    if (accountId === "teacher") {
-      return (
-        user.role === "teacher" || (user as any)?.partner_role === "teacher"
-      );
-    }
+      if (rpcError) {
+        console.error("SelectAccount: RPC error", {
+          error_code: rpcError.code,
+          error_message: rpcError.message,
+          account_type: accountId,
+        });
+        return false;
+      }
 
-    return false;
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        console.warn("SelectAccount: No result from RPC", { accountId });
+        return false;
+      }
+
+      const firstResult = result[0] as {
+        account_exists: boolean;
+        account_id: string;
+      };
+      const accountExists = firstResult.account_exists === true;
+
+      console.debug("SelectAccount: Verification result", {
+        account_type: accountId,
+        exists: accountExists,
+        account_id: firstResult.account_id,
+      });
+
+      return accountExists;
+    } catch (err) {
+      console.error("SelectAccount: Verification error", {
+        error: err instanceof Error ? err.message : String(err),
+        account_type: accountId,
+      });
+      return false;
+    }
   };
 
-  const onContinue = () => {
-    if (!selectedAccount) return;
-
-    // JSON-based verification (synchronous)
-    const ok = verifyAccount(selectedAccount);
-    if (!ok) {
-      toast.error("You don't have the selected account type on record.");
+  const onContinue = async () => {
+    if (!selectedAccount) {
+      toast.error("Please select an account type");
       return;
     }
 
-    toast.success("Account verified — redirecting...");
-    navigate("/dashboard");
+    const verificationPromise = (async () => {
+      const ok = await verifyAccount(selectedAccount);
+      if (!ok) {
+        throw new Error(
+          `No ${selectedAccount} account found. Please create one first.`,
+        );
+      }
+      return true;
+    })();
+
+    toast.promise(verificationPromise, {
+      loading: "Verifying account...",
+      success: "Account verified — redirecting to dashboard...",
+      error: (e) => String(e),
+    });
+
+    try {
+      await verificationPromise;
+      console.debug("SelectAccount: Navigation to dashboard", {
+        account_type: selectedAccount,
+      });
+      navigate("/dashboard");
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Unknown error";
+      console.error("SelectAccount: Navigation error", { error: errorMsg });
+      toast.error(errorMsg);
+    }
   };
 
   return (
@@ -111,7 +169,7 @@ export default function SelectAccount() {
               }`}
             >
               <div className="flex flex-col items-center justify-center h-full gap-4 p-4">
-                <div className="w-28 h-28 rounded-full overflow-hidden flex items-center justify-center relative">
+                <div className="w-28 h-28 rounded-full overflow-hidden flex items-center justify-center relative bg-gray-100">
                   {selectedAccount === account.id && (
                     <div className="absolute inset-0 bg-[#34D399] rounded-full flex items-center justify-center z-10">
                       <Check className="w-12 h-12 text-white" strokeWidth={3} />
@@ -121,6 +179,12 @@ export default function SelectAccount() {
                     src={account.image}
                     alt={account.label}
                     className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={(e) => {
+                      console.warn(`Failed to load image for ${account.label}`);
+                      (e.currentTarget as HTMLImageElement).src =
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23f3f4f6' width='100' height='100'/%3E%3C/svg%3E";
+                    }}
                   />
                 </div>
                 <span className="text-[#1F2937] text-lg font-medium">

@@ -9,7 +9,7 @@ The `supabaseCRUD.ts` has been successfully modularized into **12 separate, focu
 src/lib/
 ├── supabaseCRUD.ts (Main Facade - re-exports all modules)
 └── modules/
-    ├── genericHelpers.ts       # Generic CRUD operations (listTable, getById, insertRow, etc.)
+    ├─��� genericHelpers.ts       # Generic CRUD operations (listTable, getById, insertRow, etc.)
     ├── convexIdSupport.ts      # Legacy Convex ID support
     ├── partnersCRUD.ts         # Partners operations
     ├── usersCRUD.ts            # Users operations  

@@ -1,5 +1,3 @@
-
-
 /**
  * Generate a visually appealing social poster using Cloudinary.
  * 🎨 Features:

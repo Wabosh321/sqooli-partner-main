@@ -1,89 +1,102 @@
 import { useEffect, useState } from "react";
-import type { Partner, ConvexUser, UseAuthReturn } from "../types/auth.types";
+import type {
+  AuthenticatedUser,
+  ConvexPartner,
+  ConvexUser,
+  UseAuthReturn,
+} from "../types/auth.types";
 import { supabase } from "../lib/supabase";
+import {
+  initializeAuthContext,
+  fetchPartnerData,
+  verifyAuthenticatedUser,
+} from "../utils/verifyAuthData";
+import { useLogger } from "@jelly/logger";
 
 export function useAuth(): UseAuthReturn {
-  const [supabaseUser, setSupabaseUser] = useState<ConvexUser | null>(null);
-  const [partner, setPartner] = useState<Partner | null>(null);
+  let logger;
+  try {
+    logger = useLogger();
+  } catch {
+    // Fallback if LoggerProvider not available
+    logger = {
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+    };
+  }
+  const [laravelUser, setLaravelUser] = useState<AuthenticatedUser | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<ConvexUser | null>(null);
+  const [partner, setPartner] = useState<ConvexPartner | null>(null);
 
+  // Define initialization logic that can be called multiple times
   const initAuth = async () => {
+    logger.info("Auth hook initialization started", { userId: "anonymous" });
     try {
-      setLoading(true);
-
+      // Use unified verification system
       const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
+        user: authUser,
+        partner: authPartner,
+        isAuthenticated,
+      } = await initializeAuthContext();
 
-      if (sessionError || !session) {
+      logger.info("Auth context initialization completed", {
+        userId: authUser?.id || "anonymous",
+        isAuthenticated,
+        hasUser: !!authUser,
+        hasPartner: !!authPartner,
+      });
+
+      if (!isAuthenticated || !authUser) {
+        logger.info("User not authenticated, clearing auth state", {
+          userId: "anonymous",
+        });
         setSupabaseUser(null);
         setPartner(null);
         setLoading(false);
         return;
       }
 
-      const userId = session.user.id;
+      // Set user state
+      setSupabaseUser({
+        _id: authUser.id,
+        id: authUser.id,
+        email: authUser.email,
+        role: authUser.role,
+        partner_id: authPartner?.id || authUser.id,
+        is_first_login: authUser.is_first_login || false,
+      } as ConvexUser);
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select(
-          `
-        id, 
-        email, 
-        full_name, 
-        role, 
-        partner_id, 
-        access_level, 
-        permissions,
-        partner:partners(
-          id, 
-          org_name, 
-          partner_type, 
-          access_level, 
-          commission_rate, 
-          onboarding_completed
-        )
-      `,
-        )
-        .eq("id", userId)
-        .single();
-
-      if (profileError) {
-        setSupabaseUser(null);
-        setPartner(null);
-        setLoading(false);
-        return;
+      // Set partner state if found
+      if (authPartner) {
+        setPartner(authPartner as ConvexPartner);
+        logger.info("Auth hook: Partner loaded", {
+          userId: authUser.id,
+          id: authPartner.id,
+          type: authPartner.partner_type,
+          onboarding_completed: authPartner.onboarding_completed,
+        });
       }
 
-      const mappedUser: ConvexUser = {
-        _id: profile.id,
-        id: profile.id,
-        email: profile.email,
-        role: profile.role,
-        partner_id: profile.partner_id,
-        is_first_login: false,
-      };
+      logger.info("Auth hook completed successfully", {
+        userId: authUser.id,
+        hasPartner: !!authPartner,
+      });
 
-      const partnerData = Array.isArray(profile.partner)
-        ? profile.partner[0]
-        : profile.partner;
-      const mappedPartner: Partner = {
-        id: profile.partner_id,
-        org_name: partnerData?.org_name || "",
-        partner_type: partnerData?.partner_type || "",
-        access_level: partnerData?.access_level || 0,
-        commission_rate: partnerData?.commission_rate || 0,
-        onboarding_completed: partnerData?.onboarding_completed || false,
-        created_at: partnerData?.created_at,
-        updated_at: partnerData?.updated_at,
-      };
-
-      setSupabaseUser(mappedUser);
-      setPartner(mappedPartner);
       setLoading(false);
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      logger.error(
+        "Auth initialization error",
+        { error_message: errorMessage },
+        err as Error,
+      );
+      console.error("Auth initialization error:", err);
       setError("Authentication check failed");
       setSupabaseUser(null);
       setPartner(null);
@@ -91,27 +104,12 @@ export function useAuth(): UseAuthReturn {
     }
   };
 
+  // Step 1: Try both Laravel and Supabase auth
   useEffect(() => {
     initAuth();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          initAuth();
-        } else if (event === "SIGNED_OUT") {
-          setSupabaseUser(null);
-          setPartner(null);
-        }
-      },
-    );
-
-    return () => {
-      if (authListener?.subscription) {
-        authListener.subscription.unsubscribe();
-      }
-    };
   }, []);
 
+  // Return auth state
   if (loading) {
     return {
       user: null,
@@ -136,11 +134,12 @@ export function useAuth(): UseAuthReturn {
     };
   }
 
+  // NOT AUTHENTICATED
   return {
     user: null,
     partner: null,
     loading: false,
-    error: error || null,
+    error: error || "Not authenticated",
     isFirstLogin: false,
     loginMethod: null,
     refetch: initAuth,

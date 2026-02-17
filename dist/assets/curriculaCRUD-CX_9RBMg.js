@@ -1,0 +1,2 @@
+import{updateRow as c,insertRow as t,getById as i,listTable as n}from"./genericHelpers-B-O-sM_H.js";import"./supabase-Cu0qjYwd.js";async function l(r){return n("curricula",r)}async function o(r){return i("curricula",r)}async function s(r){return t("curricula",r)}async function m(r,u){return c("curricula",r,u)}export{s as createCurriculum,o as getCurriculum,l as listCurricula,m as updateCurriculum};
+//# sourceMappingURL=curriculaCRUD-CX_9RBMg.js.map

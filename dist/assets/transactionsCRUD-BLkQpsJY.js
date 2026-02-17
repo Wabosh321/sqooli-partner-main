@@ -1,0 +1,2 @@
+import{insertRow as r,listTable as t,getById as s}from"./genericHelpers-B-O-sM_H.js";import"./supabase-Cu0qjYwd.js";async function o(n){return t("transactions",n)}async function e(n){return s("transactions",n)}async function l(n,a){return t("transactions",{...a,filters:{wallet_id:n}})}async function u(n){return r("transactions",n)}export{u as createTransaction,e as getTransaction,l as getTransactionsByWallet,o as listTransactions};
+//# sourceMappingURL=transactionsCRUD-BLkQpsJY.js.map
